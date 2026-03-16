@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Résultats décodés — {{ course.name }}{% endblock %}
+{% block page_title %}Résultats décodés — {{ course.code }}{% endblock %}
+
+{% block content %}
+
+<div class="card mb-20">
+    <div class="card-body" style="padding:16px 24px;">
+        <div class="flex justify-between flex-center">
+            <div>
+                <h2 style="font-size:18px; font-weight:700; color:var(--navy);">{{ course.name }}</h2>
+                <p class="text-muted">{{ course.semester }}
+                    {% if graded < total %}
+                    — <span style="color:var(--warning);">⚠️ {{ graded }}/{{ total }} notes reçues</span>
+                    {% else %}
+                    — <span style="color:var(--success);">✅ Toutes les notes reçues</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="flex gap-12">
+                <a href="{% url 'export_excel' course.id %}" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Télécharger Excel
+                </a>
+                <a href="{% url 'registra_dashboard' %}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- STATS RAPIDES -->
+{% if decoded_data %}
+{% with total_d=decoded_data|length %}
+<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:24px;">
+    <div class="stat-card navy">
+        <div class="stat-value">{{ total_d }}</div>
+        <div class="stat-label">Total étudiants</div>
+    </div>
+    <div class="stat-card success" id="stat-admitted">
+        <div class="stat-value" id="count-admitted">—</div>
+        <div class="stat-label">Admis (≥10)</div>
+    </div>
+    <div class="stat-card" style="border-color:var(--danger);" id="stat-failed">
+        <div class="stat-value" id="count-failed">—</div>
+        <div class="stat-label">Recalés</div>
+    </div>
+    <div class="stat-card gold">
+        <div class="stat-value" id="avg-final">—</div>
+        <div class="stat-label">Moyenne générale</div>
+    </div>
+</div>
+{% endwith %}
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-unlock" style="color:var(--success)"></i>
+            Liste complète décodée
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+    </div>
+    <div class="table-wrap">
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>MATRICULE</th>
+                    <th>NOM</th>
+                    <th>PRÉNOM</th>
+                    <th>CODE ANON.</th>
+                    <th>CC (30%)</th>
+                    <th>SN (70%)</th>
+                    <th>NOTE FINALE</th>
+                    <th>MENTION</th>
+                    <th>RÉSULTAT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in decoded_data %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><code>{{ row.matricule }}</code></td>
+                    <td><strong>{{ row.nom }}</strong></td>
+                    <td>{{ row.prenom }}</td>
+                    <td><span class="badge badge-navy">{{ row.code }}</span></td>
+                    <td>{{ row.cc|default:'—' }}</td>
+                    <td>{{ row.sn|default:'—' }}</td>
+                    <td>
+                        <strong style="font-size:16px; color:{% if row.final and row.final >= 10 %}var(--success){% elif row.final %}var(--danger){% else %}var(--gray-400){% endif %}">
+                            {{ row.final|default:'—' }}
+                        </strong>
+                    </td>
+                    <td>
+                        <span class="badge {% if row.final and row.final >= 10 %}badge-success{% elif row.final %}badge-danger{% else %}badge-navy{% endif %}">
+                            {{ row.mention }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if row.final %}
+                            {% if row.final >= 10 %}
+                            <span class="badge badge-success">ADMIS</span>
+                            {% else %}
+                            <span class="badge badge-danger">RECALÉ</span>
+                            {% endif %}
+                        {% else %}
+                        <span class="badge badge-warning">N/A</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" class="text-center text-muted" style="padding:30px;">Aucune donnée.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const rows = document.querySelectorAll('#resultsTable tbody tr');
+    let admitted = 0, failed = 0, sum = 0, count = 0;
+
+    rows.forEach(row => {
+        const finalCell = row.cells[7];
+        const val = parseFloat(finalCell?.textContent?.trim());
+        if (!isNaN(val)) {
+            sum += val; count++;
+            if (val >= 10) admitted++; else failed++;
+        }
+    });
+
+    document.getElementById('count-admitted').textContent = admitted;
+    document.getElementById('count-failed').textContent = failed;
+    document.getElementById('avg-final').textContent = count > 0 ? (sum/count).toFixed(2) : '—';
+});
+</script>
+{% endblock %}

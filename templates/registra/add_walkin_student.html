@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}Add Walk-in Student — {{ course.code }}{% endblock %}
+{% block content %}
+
+<style>
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 600; color: #6B7280;
+  text-decoration: none; margin-bottom: 1.25rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #1A4A8A; }
+
+.form-wrapper {
+  max-width: 550px; margin: 0 auto;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.form-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 2rem;
+  position: relative; overflow: hidden;
+}
+.form-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+
+.form-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem; font-weight: 700; color: #0F1C2E;
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid #EEF2F8;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block; font-size: 0.75rem; font-weight: 700;
+  color: #374151; text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 0.5rem;
+}
+
+.form-label .required {
+  color: #DC2626;
+}
+
+.form-control {
+  width: 100%; padding: 0.75rem 1rem;
+  border: 1.5px solid #EEF2F8; border-radius: 12px;
+  font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+  color: #0F1C2E; outline: none; transition: all 0.2s;
+  background: #F8FAFF; box-sizing: border-box;
+}
+.form-control:focus {
+  border-color: #1A4A8A; background: white;
+  box-shadow: 0 0 0 3px rgba(26,74,138,0.08);
+}
+
+.form-error {
+  font-size: 0.75rem; color: #DC2626; font-weight: 500;
+  margin-top: 0.4rem; display: block;
+}
+
+.warning-alert {
+  padding: 1.25rem 1.5rem; border-radius: 14px;
+  margin-bottom: 1.75rem; font-size: 0.85rem;
+  background: #FEF3C7; color: #92400E;
+  border-left: 4px solid #F59E0B;
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  animation: fadeInUp 0.5s ease 0.1s both;
+}
+.warning-alert-icon {
+  font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem;
+}
+.warning-alert strong {
+  color: #78350F; display: block; margin-bottom: 0.2rem;
+}
+
+.error-alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.25rem; font-size: 0.85rem; font-weight: 500;
+  background: #FEF2F2; color: #991B1B;
+  border-left: 4px solid #DC2626;
+  animation: fadeInUp 0.4s ease both;
+}
+
+.btn-group {
+  display: flex; gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.65rem 1.25rem; border-radius: 10px;
+  font-size: 0.82rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+  flex: 1;
+  justify-content: center;
+}
+.btn-success { background: #059669; color: white; }
+.btn-success:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
+.btn-outline { background: white; color: #0F1C2E; border: 1.5px solid #EEF2F8; }
+.btn-outline:hover { border-color: #D4500A; color: #D4500A; background: #FFF4EE; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- BACK LINK -->
+<a href="{% url 'registra_course_detail' course.id %}" class="back-link">← Back to Course</a>
+
+<!-- FORM WRAPPER -->
+<div class="form-wrapper">
+  <!-- FORM CARD -->
+  <div class="form-card">
+    <h1 class="form-title">➕ Add Walk-in Student</h1>
+
+    <!-- WARNING ALERT -->
+    <div class="warning-alert">
+      <span class="warning-alert-icon">⚠️</span>
+      <div>
+        <strong>Note:</strong> This student was not in the original enrollment list. First name and last name are required.
+      </div>
+    </div>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <!-- NON-FIELD ERRORS -->
+      {% if form.non_field_errors %}
+      <div class="error-alert">
+        {% for error in form.non_field_errors %}
+          {{ error }}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- MATRICULE FIELD -->
+      <div class="form-group">
+        <label for="{{ form.matricule.id_for_label }}" class="form-label">
+          Matricule <span class="required">*</span>
+        </label>
+        {% if form.matricule %}
+          {{ form.matricule }}
+        {% else %}
+          <input type="text" name="matricule" class="form-control" placeholder="e.g. STU2024001" required>
+        {% endif %}
+        {% if form.matricule.errors %}
+          {% for error in form.matricule.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- FIRST NAME FIELD -->
+      <div class="form-group">
+        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+          First Name <span class="required">*</span>
+        </label>
+        {% if form.first_name %}
+          {{ form.first_name }}
+        {% else %}
+          <input type="text" name="first_name" class="form-control" placeholder="Student's first name" required>
+        {% endif %}
+        {% if form.first_name.errors %}
+          {% for error in form.first_name.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- LAST NAME FIELD -->
+      <div class="form-group">
+        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+          Last Name <span class="required">*</span>
+        </label>
+        {% if form.last_name %}
+          {{ form.last_name }}
+        {% else %}
+          <input type="text" name="last_name" class="form-control" placeholder="Student's last name" required>
+        {% endif %}
+        {% if form.last_name.errors %}
+          {% for error in form.last_name.errors %}
+            <span class="form-error">{{ error }}</span>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="btn-group">
+        <button type="submit" class="btn btn-success">
+          ✓ Add Student
+        </button>
+        <a href="{% url 'registra_course_detail' course.id %}" class="btn btn-outline">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

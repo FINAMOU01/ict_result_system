@@ -1,0 +1,72 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}User Management{% endblock %}
+{% block page_title %}User <span class="highlight">Accounts</span>{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">User Management</h3>
+        <a href="{% url 'create_user' %}" class="card-action">+ Add User</a>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><strong>{{ u.get_full_name }}</strong></td>
+                    <td><code style="font-family:'JetBrains Mono',monospace;color:#1A4A8A;font-size:0.78rem;">{{ u.username }}</code></td>
+                    <td style="font-size:0.85rem;">{{ u.email|default:"—" }}</td>
+                    <td>
+                        <span class="badge {% if u.role == 'admin' %}badge-coded{% elif u.role == 'registra' %}badge-bachelor{% else %}badge-pending{% endif %}">
+                            {{ u.get_role_display }}
+                        </span>
+                    </td>
+                    <td style="font-size:0.85rem;">{{ u.department|default:"—" }}</td>
+                    <td>
+                        {% if u.is_active %}
+                            <span class="badge badge-active">Active</span>
+                        {% else %}
+                            <span class="badge badge-pending">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'toggle_user_active' u.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline" style="font-size:0.7rem;padding:0.3rem 0.6rem;">
+                                {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:2rem 1.5rem;color:#6B7280;">
+                        🔑 No users created yet
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .data-table code {
+        background: #EEF4FF;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}

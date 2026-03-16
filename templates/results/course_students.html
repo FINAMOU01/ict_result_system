@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.name }} — Registra{% endblock %}
+{% block page_title %}{{ course.code }} — {{ course.name }}{% endblock %}
+
+{% block content %}
+
+<!-- COURSE INFO + ACTIONS -->
+<div class="card mb-24">
+    <div class="card-body">
+        <div class="flex justify-between flex-center">
+            <div>
+                <span class="badge badge-navy" style="margin-bottom:8px;">{{ course.code }}</span>
+                <h2 style="font-size:20px; font-weight:700; color:var(--navy);">{{ course.name }}</h2>
+                <p class="text-muted">
+                    {{ course.semester }}
+                    {% if course.professor %} — <i class="fas fa-chalkboard-teacher"></i> {{ course.professor.get_full_name }}{% endif %}
+                </p>
+            </div>
+            <div class="flex gap-12">
+                {% if not is_coded %}
+                <form method="post" action="{% url 'code_course' course.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-gold btn-lg"
+                        onclick="return confirm('Coder les {{ enrollments.count }} étudiants de cette matière ?')">
+                        <i class="fas fa-qrcode"></i> Coder la liste ({{ enrollments.count }} étudiants)
+                    </button>
+                </form>
+                {% else %}
+                <span class="badge badge-success" style="font-size:13px; padding:10px 16px;">
+                    <i class="fas fa-check-circle"></i> Liste codée
+                </span>
+                <a href="{% url 'decode_results' course.id %}" class="btn btn-success">
+                    <i class="fas fa-unlock-alt"></i> Décoder les résultats
+                </a>
+                <a href="{% url 'export_excel' course.id %}" class="btn btn-outline">
+                    <i class="fas fa-file-excel"></i> Exporter Excel
+                </a>
+                {% endif %}
+                <a href="{% url 'registra_dashboard' %}" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if is_coded %}
+<!-- LOOKUP TOOL -->
+<div class="card mb-24" style="border-left: 4px solid var(--gold);">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-search" style="color:var(--gold)"></i>
+            Rechercher le code d'un étudiant
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="flex gap-12" style="align-items: flex-end;">
+            <div style="flex: 1;">
+                <label class="form-label">Matricule de l'étudiant</label>
+                <input type="text" id="lookupInput" class="form-control" placeholder="Ex: ICT2024001" maxlength="30">
+            </div>
+            <button class="btn btn-primary" onclick="lookupMatricule()">
+                <i class="fas fa-search"></i> Rechercher
+            </button>
+        </div>
+        <div id="lookupResult" style="margin-top: 16px; display:none;">
+        </div>
+    </div>
+</div>
+
+<!-- CODED LIST -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-list-ol" style="color:var(--gold)"></i>
+            Liste codée — {{ coded_list.count }} étudiants
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:80px;">CODE</th>
+                    <th>MATRICULE</th>
+                    <th>NOM COMPLET</th>
+                    <th>STATUT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for anon in coded_list %}
+                <tr>
+                    <td>
+                        <span style="font-size:22px; font-weight:700; color:var(--navy);">{{ anon.code }}</span>
+                    </td>
+                    <td><code>{{ anon.enrollment.student.matricule }}</code></td>
+                    <td><strong>{{ anon.enrollment.student.full_name }}</strong></td>
+                    <td>
+                        {% if anon.status == 'decoded' %}
+                        <span class="badge badge-success">Décodé</span>
+                        {% elif anon.status == 'graded' %}
+                        <span class="badge badge-info">Notes reçues</span>
+                        {% elif anon.status == 'coded' %}
+                        <span class="badge badge-warning">En attente de notes</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% else %}
+<!-- UNCODED LIST -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-users" style="color:var(--gold)"></i>
+            Étudiants inscrits — {{ enrollments.count }}
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>MATRICULE</th>
+                    <th>NOM</th>
+                    <th>PRÉNOM</th>
+                    <th>NIVEAU</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enroll in enrollments %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><code>{{ enroll.student.matricule }}</code></td>
+                    <td><strong>{{ enroll.student.last_name }}</strong></td>
+                    <td>{{ enroll.student.first_name }}</td>
+                    <td><span class="badge badge-navy">{{ enroll.student.level|capfirst }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center text-muted" style="padding:30px;">Aucun étudiant inscrit.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function lookupMatricule() {
+    const matricule = document.getElementById('lookupInput').value.trim();
+    if (!matricule) return;
+
+    const resultDiv = document.getElementById('lookupResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<p class="text-muted"><i class="fas fa-spinner fa-spin"></i> Recherche...</p>';
+
+    fetch(`{% url 'lookup_matricule' course.id %}?matricule=${encodeURIComponent(matricule)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.found) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>${data.student_name}</strong> (${data.matricule})<br>
+                            Code anonyme : <span style="font-size:24px; font-weight:800; color:var(--navy);">${data.code}</span>
+                        </div>
+                    </div>`;
+            } else {
+                resultDiv.innerHTML = `<div class="alert alert-error"><i class="fas fa-times-circle"></i> ${data.message}</div>`;
+            }
+        })
+        .catch(() => {
+            resultDiv.innerHTML = '<div class="alert alert-error">Erreur de connexion.</div>';
+        });
+}
+
+document.getElementById('lookupInput')?.addEventListener('keypress', e => {
+    if (e.key === 'Enter') lookupMatricule();
+});
+</script>
+{% endblock %}

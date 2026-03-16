@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Notes — {{ course.name }}{% endblock %}
+{% block page_title %}Saisie des notes — {{ course.code }}{% endblock %}
+
+{% block content %}
+
+<div class="card mb-20">
+    <div class="card-body" style="padding:16px 24px;">
+        <div class="flex justify-between flex-center">
+            <div>
+                <h2 style="font-size:18px; font-weight:700; color:var(--navy);">{{ course.name }}</h2>
+                <p class="text-muted">{{ course.semester }} — Calcul : CC × 30% + SN × 70%</p>
+            </div>
+            <div class="flex gap-12">
+                <a href="{% url 'professor_dashboard' %}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- IMPORTANT NOTE -->
+<div class="alert alert-info" style="margin-bottom:20px;">
+    <i class="fas fa-info-circle"></i>
+    <div>
+        <strong>Anonymat préservé :</strong> Vous ne voyez que les codes anonymes, pas les noms ni matricules des étudiants.
+        Saisissez les notes CC (Contrôle Continu) et SN (Session Normale) pour chaque code.
+        Les notes doivent être entre 0 et 20.
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-list-ol" style="color:var(--gold)"></i>
+            Notes par code — {{ anon_codes.count }} étudiant(s)
+        </div>
+        <div class="flex gap-8">
+            <button type="button" class="btn btn-outline btn-sm" onclick="saveGrades()">
+                <i class="fas fa-save"></i> Sauvegarder
+            </button>
+        </div>
+    </div>
+
+    <form method="post" id="gradesForm">
+        {% csrf_token %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:80px;">CODE</th>
+                        <th>CC (30%) <span style="font-weight:400; opacity:0.7;">/20</span></th>
+                        <th>SN (70%) <span style="font-weight:400; opacity:0.7;">/20</span></th>
+                        <th>NOTE FINALE</th>
+                        <th>MENTION</th>
+                        <th>STATUT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for anon in anon_codes %}
+                    <tr id="row-{{ anon.id }}">
+                        <td>
+                            <span style="font-size:22px; font-weight:800; color:var(--navy-mid);">{{ anon.code }}</span>
+                        </td>
+                        <td>
+                            <input type="number"
+                                name="cc_{{ anon.id }}"
+                                id="cc_{{ anon.id }}"
+                                class="grade-input"
+                                min="0" max="20" step="0.25"
+                                value="{{ anon.grade.cc_grade|default:'' }}"
+                                placeholder="—"
+                                {% if anon.grade.status == 'submitted' %}readonly{% endif %}
+                                onchange="computeFinal('{{ anon.id }}')">
+                        </td>
+                        <td>
+                            <input type="number"
+                                name="sn_{{ anon.id }}"
+                                id="sn_{{ anon.id }}"
+                                class="grade-input"
+                                min="0" max="20" step="0.25"
+                                value="{{ anon.grade.sn_grade|default:'' }}"
+                                placeholder="—"
+                                {% if anon.grade.status == 'submitted' %}readonly{% endif %}
+                                onchange="computeFinal('{{ anon.id }}')">
+                        </td>
+                        <td>
+                            <span id="final_{{ anon.id }}" style="font-weight:700; font-size:16px; color:var(--navy);">
+                                {% if anon.grade.final_grade %}{{ anon.grade.final_grade }}{% else %}—{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span id="mention_{{ anon.id }}" class="badge
+                                {% if anon.grade.final_grade %}
+                                    {% if anon.grade.final_grade >= 10 %}badge-success{% else %}badge-danger{% endif %}
+                                {% else %}badge-navy{% endif %}">
+                                {{ anon.grade.mention|default:'—' }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if anon.grade.status == 'submitted' %}
+                            <span class="badge badge-success"><i class="fas fa-lock"></i> Soumis</span>
+                            {% else %}
+                            <span class="badge badge-warning" id="status_{{ anon.id }}">Brouillon</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="padding: 20px 24px; border-top: 1px solid var(--gray-100); display:flex; justify-content:flex-end; gap:12px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Sauvegarder toutes les notes
+            </button>
+            <a href="{% url 'professor_dashboard' %}" class="btn btn-outline">Retour</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function computeFinal(id) {
+    const cc = parseFloat(document.getElementById('cc_' + id)?.value);
+    const sn = parseFloat(document.getElementById('sn_' + id)?.value);
+    const finalEl = document.getElementById('final_' + id);
+    const mentionEl = document.getElementById('mention_' + id);
+
+    if (!isNaN(cc) && !isNaN(sn)) {
+        const final = (cc * 0.30 + sn * 0.70).toFixed(2);
+        finalEl.textContent = final;
+
+        let mention = '', cls = '';
+        const f = parseFloat(final);
+        if (f >= 16) { mention = 'Très Bien'; cls = 'badge-success'; }
+        else if (f >= 14) { mention = 'Bien'; cls = 'badge-success'; }
+        else if (f >= 12) { mention = 'Assez Bien'; cls = 'badge-success'; }
+        else if (f >= 10) { mention = 'Passable'; cls = 'badge-success'; }
+        else { mention = 'Insuffisant'; cls = 'badge-danger'; }
+
+        mentionEl.textContent = mention;
+        mentionEl.className = 'badge ' + cls;
+        finalEl.style.color = f >= 10 ? 'var(--success)' : 'var(--danger)';
+    } else {
+        finalEl.textContent = '—';
+        finalEl.style.color = 'var(--navy)';
+    }
+}
+
+// Initialize finals on load
+document.addEventListener('DOMContentLoaded', () => {
+    {% for anon in anon_codes %}
+    computeFinal('{{ anon.id }}');
+    {% endfor %}
+});
+
+function saveGrades() {
+    document.getElementById('gradesForm').submit();
+}
+</script>
+{% endblock %}

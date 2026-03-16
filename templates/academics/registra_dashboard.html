@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% block title %}Registra — ICT University{% endblock %}
+{% block page_title %}Tableau de bord <span style="color:#D4500A;">Registra</span>{% endblock %}
+
+{% block content %}
+
+<!-- STATS OVERVIEW SECTION -->
+<div class="dashboard-section">
+  <div class="section-title">Overview</div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📚</div>
+      <span class="stat-value">{{ courses|length }}</span>
+      <span class="stat-label">Courses Assigned</span>
+      <span class="stat-trend">This semester</span>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">🔢</div>
+      <span class="stat-value">{{ coded_count }}</span>
+      <span class="stat-label">Courses Coded</span>
+      <span class="stat-trend">↑ Anonymized</span>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">✅</div>
+      <span class="stat-value">{{ decoded_count }}</span>
+      <span class="stat-label">Results Decoded</span>
+      <span class="stat-trend">Ready to export</span>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <span class="stat-value">{{ total_students }}</span>
+      <span class="stat-label">Total Students</span>
+      <span class="stat-trend">{{ walkin_count }} walk-in</span>
+    </div>
+  </div>
+</div>
+
+<!-- SEMESTER SELECTOR SECTION -->
+{% if semesters %}
+<div class="dashboard-section">
+  <div class="semester-filter">
+    <label class="semester-filter-label">
+      📅 Select Semester
+    </label>
+    <form method="get" id="semester-form">
+      <select name="semester" class="semester-select" onchange="document.getElementById('semester-form').submit()">
+        <option value="">-- Choose a semester --</option>
+        {% for sem in semesters %}
+        <option value="{{ sem.id }}" {% if selected_semester.id == sem.id %}selected{% endif %}>
+          {{ sem.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if selected_semester %}
+<!-- COURSES SECTION -->
+<div class="section-with-filter">
+  <div class="section-title">Courses — {{ selected_semester.name }}</div>
+  
+  {% if courses %}
+  <div class="courses-grid">
+    {% for course in courses %}
+    <div class="course-card">
+      <div class="course-card-header">
+        <div>
+          <div class="course-code">{{ course.code }}</div>
+          <div class="course-name">{{ course.name }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.3rem;align-items:flex-end;">
+          <span class="badge badge-{{ course.level }}">{{ course.level }}</span>
+          {% if course.is_decoded %}
+            <span class="badge badge-decoded">🔓 Decoded</span>
+          {% elif course.grades_submitted %}
+            <span class="badge badge-submitted">✅ Submitted</span>
+          {% elif course.is_coded %}
+            <span class="badge badge-coded">🔢 Coded</span>
+          {% else %}
+            <span class="badge badge-pending">⏳ Pending</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="course-card-body">
+        <div class="course-meta">
+          <span class="course-prof">👨‍🏫 {{ course.professor.get_full_name|default:"Unassigned" }}</span>
+          <span class="course-students">👥 {{ course.enrollment_set.count }} students</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label">
+            <span>{% if course.grades_submitted %}Grades ready{% else %}Enrollment{% endif %}</span>
+            <strong>{{ course.enrollment_set.count }} students</strong>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:{% if course.grades_submitted %}100{% else %}100{% endif %}%"></div>
+          </div>
+        </div>
+        <div class="course-actions">
+          {% if course.is_decoded %}
+            <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-primary">📥 Download Excel</a>
+            <a href="{% url 'registra_decoded_results' course.id %}" class="btn btn-ghost">👁 View Decoded</a>
+          {% elif course.grades_submitted %}
+            <a href="{% url 'registra_anonymous_results' course.id %}" class="btn btn-orange">👁 View Results</a>
+            <a href="{% url 'registra_decode_results' course.id %}" class="btn btn-success">🔓 Decode</a>
+          {% elif course.is_coded %}
+            <a href="{% url 'download_coding_sheet' course.id %}" class="btn btn-outline">📄 Coding Sheet</a>
+            <a href="{% url 'lookup_code' %}" class="btn btn-ghost">🔍 Lookup</a>
+          {% else %}
+            <a href="{% url 'generate_codes' course.id %}" class="btn btn-primary">🔢 Generate Codes</a>
+            <a href="{% url 'registra_course_detail' course.id %}" class="btn btn-ghost">👥 View Students</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="course-card" style="grid-column: 1 / -1;">
+    <div class="course-card-body" style="padding: 3rem 2rem; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 1rem;">📚</div>
+      <h3 style="color: #0F1C2E; font-weight: 700; margin-bottom: 0.5rem;">No courses assigned</h3>
+      <p style="color: #6B7280; margin: 0;">No courses are available for {{ selected_semester.name }}. Please check back later or select a different semester.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- TOOLS SECTION -->
+<div class="dashboard-section">
+  <div class="section-title">Tools & Utilities</div>
+  <div class="bottom-grid">
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🔍 Student Code Lookup</span>
+      </div>
+      <div class="lookup-form">
+        <form method="GET" action="{% url 'lookup_code' %}">
+          {% csrf_token %}
+          <label class="lookup-label">Matricule Number</label>
+          <div class="lookup-input-row">
+            <input class="lookup-input" type="text"
+                   name="matricule" placeholder="e.g. ICT2021001"
+                   value="{{ request.GET.matricule }}"
+                   required>
+            <button type="submit" class="btn btn-primary">Search</button>
+          </div>
+        </form>
+        {% if lookup_student %}
+        <div class="lookup-result">
+          <div class="lookup-result-label">
+            Result — {{ lookup_course.code }} · {{ lookup_course.name }}
+          </div>
+          <div class="lookup-result-row">
+            <div class="lookup-name">{{ lookup_student.get_full_name }}</div>
+            <div class="lookup-code">{{ lookup_code }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">⚡ Quick Access</span>
+      </div>
+      <a href="{% url 'registra_semester_history' %}" class="quick-link">
+        <div class="ql-icon ql-blue">🕐</div>
+        <div>
+          <div class="ql-title">Semester History</div>
+          <div class="ql-sub">Browse past results</div>
+        </div>
+        <span class="ql-arrow">›</span>
+      </a>
+      <a href="{% url 'lookup_code' %}" class="quick-link">
+        <div class="ql-icon ql-orange">🔍</div>
+        <div>
+          <div class="ql-title">Lookup Code</div>
+          <div class="ql-sub">Find student codes</div>
+        </div>
+        <span class="ql-arrow">›</span>
+      </a>
+      <a href="{% url 'registra_dashboard' %}" class="quick-link">
+        <div class="ql-icon ql-green">📊</div>
+        <div>
+          <div class="ql-title">Current Semester</div>
+          <div class="ql-sub">Back to overview</div>
+        </div>
+        <span class="ql-arrow">›</span>
+      </a>
+      <a href="{% url 'registra_semester_history' %}" class="quick-link">
+        <div class="ql-icon ql-purple">📚</div>
+        <div>
+          <div class="ql-title">Archive</div>
+          <div class="ql-sub">Previous semesters</div>
+        </div>
+        <span class="ql-arrow">›</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+
+{% else %}
+<!-- NO SEMESTER SELECTED -->
+<div class="dashboard-section">
+  <div style="background: white; border-radius: 20px; border: 1px solid #EEF2F8; padding: 3rem 2rem; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,0.04);">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📅</div>
+    <h2 style="color: #0F1C2E; font-weight: 700; margin-bottom: 0.5rem;">Select a Semester</h2>
+    <p style="color: #6B7280; margin-bottom: 1.5rem; max-width: 500px; margin-left: auto; margin-right: auto;">Choose a semester above to view and manage courses, generate codes, and access student results.</p>
+    <a href="#semester-form" class="btn btn-primary" style="display: inline-flex;">📅 Select from the dropdown above</a>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

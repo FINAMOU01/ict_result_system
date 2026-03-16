@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}Registra Dashboard{% endblock %}
+{% block content %}
+
+<style>
+.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap:1rem; margin-bottom:1.75rem; }
+.stat-card { position:relative; background:#fff; border:1px solid #EEF2F8; border-radius:20px; padding:1.35rem 1.25rem 1.25rem; overflow:hidden; box-shadow:0 2px 16px rgba(13,46,94,0.06); transition:transform 0.25s,box-shadow 0.25s; opacity:0; animation:fadeInUp 0.5s ease forwards; }
+.stat-card:nth-child(1){animation-delay:0.1s} .stat-card:nth-child(2){animation-delay:0.2s} .stat-card:nth-child(3){animation-delay:0.3s} .stat-card:nth-child(4){animation-delay:0.4s}
+.stat-card:hover{transform:translateY(-4px);box-shadow:0 10px 32px rgba(13,46,94,0.1)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:20px 20px 0 0;background:linear-gradient(90deg,#D4500A,#FF7A35)}
+.stat-icon{width:44px;height:44px;background:#FFF4EE;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:1rem;border:1px solid rgba(212,80,10,0.12)}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:2rem;font-weight:600;color:#0F1C2E;display:block;line-height:1;margin-bottom:0.3rem}
+.stat-label{font-size:0.78rem;color:#6B7280;font-weight:500;display:block;margin-bottom:0.75rem}
+.stat-trend{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.68rem;font-weight:600;background:#FFF4EE;color:#D4500A;border:1px solid rgba(212,80,10,0.15);padding:0.2rem 0.55rem;border-radius:999px}
+
+.section-title{font-size:0.72rem;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.section-title::after{content:'';flex:1;height:1px;background:#EEF2F8}
+
+.table-card{background:white;border-radius:20px;border:1px solid #EEF2F8;box-shadow:0 2px 12px rgba(0,0,0,0.04);overflow:hidden;animation:fadeInUp 0.5s ease 0.45s both}
+.table-card-header{padding:1.25rem 1.5rem;border-bottom:1px solid #EEF2F8;display:flex;align-items:center;justify-content:space-between}
+.table-card-title{font-size:0.88rem;font-weight:700;color:#0F1C2E}
+.table-card-sub{font-size:0.78rem;color:#6B7280}
+.table-card-sub strong{color:#0F1C2E;font-weight:700}
+
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{padding:0.75rem 1.25rem;text-align:left;font-size:0.68rem;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;background:#F8FAFF;border-bottom:1px solid #EEF2F8}
+.data-table td{padding:0.875rem 1.25rem;font-size:0.82rem;color:#0F1C2E;border-bottom:1px solid #F1F5F9;vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#FAFBFF;transition:background 0.15s}
+.course-code-cell{font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:600;color:#1A4A8A}
+.course-name-cell{font-weight:600;color:#0F1C2E}
+
+.badge{display:inline-flex;align-items:center;padding:0.22rem 0.65rem;border-radius:999px;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap}
+.badge-master{background:#F5F3FF;color:#7C3AED} .badge-bachelor{background:#EEF2FF;color:#4338CA} .badge-phd{background:#FFF7ED;color:#C2410C}
+.badge-coded{background:#EEF4FF;color:#1E40AF} .badge-not-coded{background:#FFFBEB;color:#92400E}
+.badge-awaiting{background:#F1F5F9;color:#64748B} .badge-received{background:#ECFDF5;color:#065F46}
+.badge-decoded{background:#F5F3FF;color:#7C3AED}
+
+.action-links{display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border-radius:8px;font-size:0.72rem;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;text-decoration:none;font-family:'DM Sans',sans-serif;white-space:nowrap}
+.btn-primary{background:#1A4A8A;color:white} .btn-primary:hover{background:#2563B0;transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,74,138,0.25)}
+.btn-orange{background:#D4500A;color:white} .btn-orange:hover{background:#FF7A35;transform:translateY(-1px)}
+.btn-success{background:#059669;color:white} .btn-success:hover{background:#047857;transform:translateY(-1px)}
+.btn-outline{background:white;color:#0F1C2E;border:1.5px solid #EEF2F8} .btn-outline:hover{border-color:#D4500A;color:#D4500A;background:#FFF4EE}
+.btn-ghost{background:#F8FAFF;color:#1A4A8A} .btn-ghost:hover{background:#EEF4FF}
+
+.empty-state{text-align:center;padding:3rem 2rem;color:#6B7280;font-size:0.875rem}
+.empty-state-icon{font-size:2.5rem;margin-bottom:0.75rem;display:block}
+
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
+
+{% if not active_semester %}
+<div style="text-align:center;padding:3rem 2rem;color:#6B7280;">
+  <span class="empty-state-icon">⚠️</span>
+  <p>No active semester found.</p>
+  <p style="font-size:0.78rem;color:#9CA3AF;">Please contact the system administrator.</p>
+</div>
+{% else %}
+
+<!-- STATS OVERVIEW -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">📚</div>
+    <span class="stat-value">{{ courses.count }}</span>
+    <span class="stat-label">Total Courses</span>
+    <span class="stat-trend">{{ active_semester.name }}</span>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">🔢</div>
+    <span class="stat-value">{{ courses_coded|default:0 }}</span>
+    <span class="stat-label">Courses Coded</span>
+    <span class="stat-trend">In Progress</span>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">✅</div>
+    <span class="stat-value">{{ courses_decoded|default:0 }}</span>
+    <span class="stat-label">Results Decoded</span>
+    <span class="stat-trend">Complete</span>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">👥</div>
+    <span class="stat-value">{{ total_students|default:0 }}</span>
+    <span class="stat-label">Total Students</span>
+    <span class="stat-trend">Enrolled</span>
+  </div>
+</div>
+
+<!-- COURSES TABLE -->
+<div class="table-card">
+  <div class="table-card-header">
+    <div>
+      <h3 class="table-card-title">Courses</h3>
+      <p class="table-card-sub">Semester: <strong>{{ active_semester.name }}</strong></p>
+    </div>
+    <a href="{% url 'lookup_code' %}" class="btn btn-primary">🔍 Lookup Code</a>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Course</th>
+          <th>Level</th>
+          <th>Professor</th>
+          <th>Students</th>
+          <th>Coding Status</th>
+          <th>Grades</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for course in courses %}
+        <tr>
+          <td><span class="course-code-cell">{{ course.code }}</span></td>
+          <td><span class="course-name-cell">{{ course.name }}</span></td>
+          <td>
+            {% if course.level == 'master' %}
+              <span class="badge badge-master">Master</span>
+            {% elif course.level == 'phd' %}
+              <span class="badge badge-phd">PhD</span>
+            {% else %}
+              <span class="badge badge-bachelor">Bachelor</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.8rem;">{{ course.professor.get_full_name|default:"—" }}</td>
+          <td><span class="badge badge-awaiting">{{ course.student_count }}</span></td>
+          <td>
+            {% if course.is_coded %}
+              <span class="badge badge-coded">✓ Coded</span>
+            {% else %}
+              <span class="badge badge-not-coded">Not Coded</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if course.grades_submitted %}
+              <span class="badge badge-received">✓ Received</span>
+            {% else %}
+              <span class="badge badge-awaiting">Awaiting</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="action-links">
+              <a href="{% url 'registra_course_detail' course.id %}" class="btn btn-outline">View</a>
+              {% if not course.is_coded %}
+                <a href="{% url 'generate_codes' course.id %}" class="btn btn-orange">Code</a>
+              {% else %}
+                <a href="{% url 'download_coding_sheet' course.id %}" class="btn btn-ghost">⬇ Sheet</a>
+              {% endif %}
+              {% if course.grades_submitted and not course.is_decoded %}
+                <a href="{% url 'registra_anonymous_results' course.id %}" class="btn btn-primary">Anon Results</a>
+              {% elif course.is_decoded %}
+                <a href="{% url 'registra_decoded_results' course.id %}" class="btn btn-success">View Decoded</a>
+                <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇ Download</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;padding:2rem;color:#9CA3AF;">
+            <span style="font-size:2rem;display:block;margin-bottom:0.5rem;">📭</span>
+            No courses this semester.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

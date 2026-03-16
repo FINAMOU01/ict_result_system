@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% block title %}Admin — ICT University{% endblock %}
+{% block page_title %}Tableau de bord Administrateur{% endblock %}
+
+{% block content %}
+
+<!-- STATS -->
+<div class="stats-grid">
+    <div class="stat-card navy">
+        <i class="fas fa-users stat-icon"></i>
+        <div class="stat-value">{{ total_students }}</div>
+        <div class="stat-label">Étudiants inscrits</div>
+    </div>
+    <div class="stat-card gold">
+        <i class="fas fa-book stat-icon"></i>
+        <div class="stat-value">{{ total_courses }}</div>
+        <div class="stat-label">Matières actives</div>
+    </div>
+    <div class="stat-card success">
+        <i class="fas fa-chalkboard-teacher stat-icon"></i>
+        <div class="stat-value">{{ total_professors }}</div>
+        <div class="stat-label">Professeurs</div>
+    </div>
+    <div class="stat-card info">
+        <i class="fas fa-layer-group stat-icon"></i>
+        <div class="stat-value">{{ semesters.count }}</div>
+        <div class="stat-label">Semestres</div>
+    </div>
+</div>
+
+<!-- IMPORT CSV -->
+<div id="import" class="card mb-24">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-file-import" style="color:var(--gold)"></i>
+            Importer les inscriptions (CSV / Excel)
+        </div>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'import_csv' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="grid-2" style="align-items: end; gap: 20px;">
+                <div>
+                    <label class="form-label">Fichier d'inscriptions</label>
+                    <div class="file-drop-area" onclick="document.getElementById('csvFile').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p style="font-weight:600; color:var(--gray-600); margin-bottom:4px;">Cliquez pour sélectionner</p>
+                        <p class="text-muted">CSV ou Excel (.xlsx) — Colonnes requises :</p>
+                        <p class="text-muted" style="font-size:11px;">matricule, nom, prenom, niveau, code_matiere, nom_matiere, semestre, annee_academique</p>
+                        <input type="file" id="csvFile" name="csv_file" accept=".csv,.xlsx,.xls" style="display:none" onchange="updateLabel(this)">
+                    </div>
+                    <p id="fileLabel" class="text-muted" style="margin-top:8px; font-size:12px;"></p>
+                </div>
+                <div>
+                    <div class="card" style="background:var(--cream); box-shadow:none; border:1.5px solid var(--gray-200);">
+                        <div class="card-body" style="padding:16px;">
+                            <p style="font-weight:600; color:var(--navy); font-size:13px; margin-bottom:10px;">📋 Format attendu du fichier</p>
+                            <div style="font-size:12px; color:var(--gray-600); line-height:2;">
+                                <div><strong>matricule</strong> — Ex: ICT2024001</div>
+                                <div><strong>nom</strong> — Nom de famille</div>
+                                <div><strong>prenom</strong> — Prénom</div>
+                                <div><strong>niveau</strong> — bachelor / master / phd</div>
+                                <div><strong>code_matiere</strong> — Ex: INFO301</div>
+                                <div><strong>nom_matiere</strong> — Nom complet</div>
+                                <div><strong>semestre</strong> — 1 ou 2</div>
+                                <div><strong>annee_academique</strong> — Ex: 2024-2025</div>
+                                <div><strong>email</strong> — (optionnel)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-gold btn-lg" style="margin-top:16px; width:100%; justify-content:center;">
+                        <i class="fas fa-upload"></i> Lancer l'import
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CREATE USER -->
+<div id="users" class="card mb-24">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-user-plus" style="color:var(--gold)"></i>
+            Créer un compte utilisateur
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('modalCreateUser')">
+            <i class="fas fa-plus"></i> Nouveau compte
+        </button>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom complet</th>
+                    <th>Identifiant</th>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>Département</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in professors %}
+                <tr>
+                    <td><strong>{{ u.get_full_name|default:u.username }}</strong></td>
+                    <td><code>{{ u.username }}</code></td>
+                    <td>{{ u.email|default:'—' }}</td>
+                    <td><span class="badge badge-success">Professeur</span></td>
+                    <td>{{ u.department|default:'—' }}</td>
+                </tr>
+                {% endfor %}
+                {% for u in registras %}
+                <tr>
+                    <td><strong>{{ u.get_full_name|default:u.username }}</strong></td>
+                    <td><code>{{ u.username }}</code></td>
+                    <td>{{ u.email|default:'—' }}</td>
+                    <td><span class="badge badge-info">Registra</span></td>
+                    <td>{{ u.department|default:'—' }}</td>
+                </tr>
+                {% endfor %}
+                {% if not professors and not registras %}
+                <tr><td colspan="5" class="text-center text-muted" style="padding:30px;">Aucun utilisateur créé.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- COURSES & PROFESSOR ASSIGNMENT -->
+<div id="courses" class="card mb-24">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fas fa-book-open" style="color:var(--gold)"></i>
+            Matières & Assignation des professeurs
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Matière</th>
+                    <th>Semestre</th>
+                    <th>Inscrits</th>
+                    <th>Professeur assigné</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr>
+                    <td><span class="badge badge-navy">{{ course.code }}</span></td>
+                    <td><strong>{{ course.name }}</strong></td>
+                    <td>{{ course.semester }}</td>
+                    <td>{{ course.enrollments.count }}</td>
+                    <td>
+                        {% if course.professor %}
+                            <span style="color:var(--success);">
+                                <i class="fas fa-check-circle"></i>
+                                {{ course.professor.get_full_name }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted"><i class="fas fa-times-circle"></i> Non assigné</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-outline btn-sm" onclick="openAssignModal({{ course.id }}, '{{ course.name|escapejs }}', '{{ course.professor.id|default:'' }}')">
+                            <i class="fas fa-user-tag"></i> Assigner
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted" style="padding:30px;">Aucune matière. Importez d'abord un fichier CSV.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL: Create User -->
+<div id="modalCreateUser" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-title">
+            <i class="fas fa-user-plus" style="color:var(--gold)"></i>
+            Créer un compte
+        </div>
+        <form method="post" action="{% url 'create_user' %}">
+            {% csrf_token %}
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Prénom</label>
+                    <input type="text" name="first_name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nom</label>
+                    <input type="text" name="last_name" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nom d'utilisateur</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Mot de passe</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control">
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label class="form-label">Rôle</label>
+                    <select name="role" class="form-control" required>
+                        <option value="professor">Professeur</option>
+                        <option value="registra">Registra</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Téléphone</label>
+                    <input type="text" name="phone" class="form-control">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Département</label>
+                <input type="text" name="department" class="form-control">
+            </div>
+            <div class="flex gap-12" style="justify-content:flex-end; margin-top:8px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalCreateUser')">Annuler</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Créer le compte</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: Assign Professor -->
+<div id="modalAssign" class="modal-overlay">
+    <div class="modal">
+        <div class="modal-title">
+            <i class="fas fa-user-tag" style="color:var(--gold)"></i>
+            Assigner un professeur
+        </div>
+        <p id="assignCourseName" style="color:var(--gray-600); margin-bottom:20px; font-size:14px;"></p>
+        <form method="post" id="assignForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Professeur</label>
+                <select name="professor_id" class="form-control" id="assignSelect">
+                    <option value="">— Aucun (retirer l'assignation) —</option>
+                    {% for prof in professors %}
+                    <option value="{{ prof.id }}">{{ prof.get_full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex gap-12" style="justify-content:flex-end; margin-top:8px;">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modalAssign')">Annuler</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Assigner</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateLabel(input) {
+    const label = document.getElementById('fileLabel');
+    if (input.files.length > 0) {
+        label.textContent = '✅ Fichier sélectionné : ' + input.files[0].name;
+    }
+}
+
+function openAssignModal(courseId, courseName, currentProfId) {
+    document.getElementById('assignCourseName').textContent = '📚 ' + courseName;
+    document.getElementById('assignForm').action = `/dashboard/admin/assign-professor/${courseId}/`;
+    const sel = document.getElementById('assignSelect');
+    if (currentProfId) {
+        for (let opt of sel.options) {
+            if (opt.value === currentProfId) { opt.selected = true; break; }
+        }
+    }
+    openModal('modalAssign');
+}
+</script>
+{% endblock %}

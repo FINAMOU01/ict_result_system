@@ -1,0 +1,13 @@
+matricule,nom,prenom,email,niveau,code_matiere,nom_matiere,semestre,annee_academique
+ICT2024001,MVONDO,Jean-Paul,jp.mvondo@ict.cm,bachelor,INFO301,Bases de Données Avancées,1,2024-2025
+ICT2024002,BIYA,Marie-Claire,mc.biya@ict.cm,bachelor,INFO301,Bases de Données Avancées,1,2024-2025
+ICT2024003,ABENA,Rodrigue,r.abena@ict.cm,bachelor,INFO301,Bases de Données Avancées,1,2024-2025
+ICT2024004,NKOMO,Sylvie,s.nkomo@ict.cm,bachelor,INFO301,Bases de Données Avancées,1,2024-2025
+ICT2024005,ESSOMBA,Patrick,p.essomba@ict.cm,bachelor,INFO301,Bases de Données Avancées,1,2024-2025
+ICT2024001,MVONDO,Jean-Paul,jp.mvondo@ict.cm,bachelor,MATH201,Mathématiques Discrètes,1,2024-2025
+ICT2024002,BIYA,Marie-Claire,mc.biya@ict.cm,bachelor,MATH201,Mathématiques Discrètes,1,2024-2025
+ICT2024006,FOUDA,Alice,a.fouda@ict.cm,bachelor,MATH201,Mathématiques Discrètes,1,2024-2025
+ICT2024007,ATANGANA,Eric,e.atangana@ict.cm,bachelor,MATH201,Mathématiques Discrètes,1,2024-2025
+ICT2025001,NGONO,Rachel,r.ngono@ict.cm,master,SINFO501,Sécurité Informatique,1,2024-2025
+ICT2025002,MFOU,Kevin,k.mfou@ict.cm,master,SINFO501,Sécurité Informatique,1,2024-2025
+ICT2025003,EBENE,Sophie,s.ebene@ict.cm,master,SINFO501,Sécurité Informatique,1,2024-2025

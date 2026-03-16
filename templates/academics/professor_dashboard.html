@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Professeur — ICT University{% endblock %}
+{% block page_title %}Mes matières{% endblock %}
+
+{% block content %}
+
+{% if not courses_data %}
+<div class="card">
+    <div class="empty-state">
+        <i class="fas fa-book-open"></i>
+        <p>Aucune matière assignée ce semestre.</p>
+        <p class="text-muted" style="margin-top:8px; font-size:13px;">Contactez l'administrateur.</p>
+    </div>
+</div>
+{% else %}
+
+<div class="grid-2">
+    {% for item in courses_data %}
+    <div class="card" style="border-top: 3px solid {% if item.all_submitted %}var(--success){% elif item.is_coded %}var(--gold){% else %}var(--gray-200){% endif %};">
+        <div class="card-body">
+            <div class="flex justify-between" style="margin-bottom: 10px;">
+                <span class="badge badge-navy">{{ item.course.code }}</span>
+                {% if item.all_submitted %}
+                <span class="badge badge-success"><i class="fas fa-check"></i> Soumis</span>
+                {% elif item.graded > 0 %}
+                <span class="badge badge-warning">En cours</span>
+                {% elif item.is_coded %}
+                <span class="badge badge-info">Prêt à noter</span>
+                {% else %}
+                <span class="badge" style="background:var(--gray-100); color:var(--gray-400);">En attente</span>
+                {% endif %}
+            </div>
+
+            <h3 style="font-size:16px; font-weight:700; color:var(--navy); margin-bottom:4px;">{{ item.course.name }}</h3>
+            <p class="text-muted" style="margin-bottom:16px;">{{ item.course.semester }}</p>
+
+            {% if item.is_coded %}
+            <div style="margin-bottom: 14px;">
+                <div class="flex justify-between text-muted" style="font-size:12px; margin-bottom:4px;">
+                    <span>Progression des notes</span>
+                    <span>{{ item.graded }}/{{ item.total }}</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width:{% if item.total > 0 %}{{ item.graded|floatformat:0 }}{% else %}0{% endif %}%"></div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="flex gap-8">
+                {% if item.is_coded %}
+                <a href="{% url 'grade_course' item.course.id %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-pen"></i> Saisir notes
+                </a>
+                {% if not item.all_submitted and item.graded == item.total and item.total > 0 %}
+                <form method="post" action="{% url 'submit_grades' item.course.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm"
+                        onclick="return confirm('Soumettre toutes les notes au registra ? Cette action est irréversible.')">
+                        <i class="fas fa-paper-plane"></i> Soumettre
+                    </button>
+                </form>
+                {% endif %}
+                {% else %}
+                <span class="text-muted" style="font-size:13px;">
+                    <i class="fas fa-clock"></i> En attente du codage par le registra
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

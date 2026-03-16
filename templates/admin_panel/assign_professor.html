@@ -1,0 +1,45 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Assign Professor{% endblock %}
+{% block page_title %}Assign <span class="highlight">Professor</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ course.code }} — {{ course.name }}</h3>
+        </div>
+        <div style="padding: 2rem;">
+            <div style="display:flex;gap:1rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #EEF2F8;font-size:0.85rem;">
+                <div>
+                    <span style="color:#6B7280;">Semester</span><br>
+                    <strong>{{ course.semester.name }}</strong>
+                </div>
+                <div>
+                    <span style="color:#6B7280;">Level</span><br>
+                    <span class="badge {% if course.level == 'bachelor' %}badge-bachelor{% elif course.level == 'master' %}badge-master{% else %}badge-phd{% endif %}">
+                        {{ course.get_level_display }}
+                    </span>
+                </div>
+                <div>
+                    <span style="color:#6B7280;">Enrollments</span><br>
+                    <strong style="font-size:1.1rem;">{{ course.enrollment_count }}</strong>
+                </div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Select Professor</label>
+                    {{ form.professor }}
+                    {% if form.professor.errors %}<div style="color:#DC2626;font-size:0.75rem;margin-top:0.3rem;">{{ form.professor.errors|first }}</div>{% endif %}
+                </div>
+                <div style="display:flex;gap:1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Save Assignment</button>
+                    <a href="{% url 'course_list' %}" class="btn btn-outline" style="flex:1;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Import Enrollment File{% endblock %}
+{% block page_title %}Import <span class="highlight">Enrollment File</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px;">
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header">
+            <h3 class="card-title">Upload Enrollment File</h3>
+        </div>
+        <div style="padding: 2rem;">
+            <p style="color: #6B7280; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                Upload a CSV or Excel file containing student enrollments. The system will automatically create students, courses, and enrollment records.
+            </p>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Academic Semester</label>
+                    {{ form.semester }}
+                    {% if form.semester.errors %}<div style="color:#DC2626;font-size:0.75rem;margin-top:0.3rem;">{{ form.semester.errors|first }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Enrollment File</label>
+                    {{ form.file }}
+                    {% if form.file.errors %}<div style="color:#DC2626;font-size:0.75rem;margin-top:0.3rem;">{{ form.file.errors|first }}</div>{% endif %}
+                    <div style="color:#6B7280;font-size:0.75rem;margin-top:0.3rem;">📎 Accepted: .csv, .xlsx, .xls — Max size: 10MB</div>
+                </div>
+                <div style="display:flex;gap:1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">📤 Import File</button>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline" style="flex:1;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Expected File Format</h3>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Matricule</th>
+                        <th>Nom & Prénom</th>
+                        <th>Course Code</th>
+                        <th>Course Name</th>
+                        <th>Semester</th>
+                        <th>Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">STU2024001</code></td>
+                        <td>MBALLA Jean</td>
+                        <td><code style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">INF301</code></td>
+                        <td>Advanced Algorithms</td>
+                        <td>S1-2025</td>
+                        <td><span class="badge badge-bachelor">bachelor</span></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">STU2024002</code></td>
+                        <td>NGUYEN Marie</td>
+                        <td><code style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">INF301</code></td>
+                        <td>Advanced Algorithms</td>
+                        <td>S1-2025</td>
+                        <td><span class="badge badge-bachelor">bachelor</span></td>
+                    </tr>
+                    <tr>
+                        <td><code style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">STU2024001</code></td>
+                        <td>MBALLA Jean</td>
+                        <td><code style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;">MAT201</code></td>
+                        <td>Analysis II</td>
+                        <td>S1-2025</td>
+                        <td><span class="badge badge-bachelor">bachelor</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div style="padding: 1.5rem; background: #FFFBEB; border-top: 1px solid #FED7AA;">
+            <strong style="color: #C2410C; font-size: 0.85rem;"><i>ℹ️ Column Names</i></strong>
+            <p style="font-size: 0.8rem; color: #9A3412; margin-top: 0.5rem; margin-bottom: 0;">
+                The system auto-detects columns by name. Accepted: <code style="font-family:'JetBrains Mono',monospace;">matricule</code>, <code style="font-family:'JetBrains Mono',monospace;">nom</code>, <code style="font-family:'JetBrains Mono',monospace;">full_name</code>, <code style="font-family:'JetBrains Mono',monospace;">course_code</code>, <code style="font-family:'JetBrains Mono',monospace;">course_name</code>, <code style="font-family:'JetBrains Mono',monospace;">semestre</code>, <code style="font-family:'JetBrains Mono',monospace;">niveau</code>, <code style="font-family:'JetBrains Mono',monospace;">level</code>.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

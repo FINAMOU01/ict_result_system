@@ -1,0 +1,73 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Semesters{% endblock %}
+{% block page_title %}Semesters <span class="highlight">Management</span>{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 380px 1fr; gap: 2rem; align-items: start;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Create Semester</h3>
+        </div>
+        <div style="padding: 1.5rem;">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label">{{ field.label }}</label>
+                    {% if field.widget.input_type == 'select' %}
+                        {% with field.widget.attrs|default:'' as attrs %}
+                        <select name="{{ field.name }}" class="form-control" {% if field.widget.is_required %}required{% endif %}>
+                            {{ field }}
+                        </select>
+                        {% endwith %}
+                    {% else %}
+                        {{ field }}
+                    {% endif %}
+                    {% if field.errors %}<div style="color:#DC2626;font-size:0.75rem;margin-top:0.3rem;">{{ field.errors|first }}</div>{% endif %}
+                    {% if field.help_text %}<div style="color:#6B7280;font-size:0.7rem;margin-top:0.3rem;">{{ field.help_text|safe }}</div>{% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Create Semester</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">All Semesters</h3>
+            <span class="card-action">{{ semesters|length }} semesters</span>
+        </div>
+        <div style="overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Semester Name</th>
+                        <th>Academic Year</th>
+                        <th>Courses</th>
+                        <th>Enrollments</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in semesters %}
+                    <tr>
+                        <td><strong>{{ s.name }}</strong></td>
+                        <td>{{ s.academic_year }}</td>
+                        <td><span class="badge" style="background:#EEF4FF;color:#1A4A8A;">{{ s.course_count }}</span></td>
+                        <td><span class="badge" style="background:#F3E8FF;color:#6B21A8;">{{ s.enrollment_count }}</span></td>
+                        <td>{% if s.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-pending">Inactive</span>{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;padding:2rem 1.5rem;color:#6B7280;">
+                            📅 No semesters yet. Create one above!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

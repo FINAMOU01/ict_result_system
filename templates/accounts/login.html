@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICT University — Sign In</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue-deep: #0D2E5E;
+            --blue-mid: #1A4A8A;
+            --blue-light: #2563B0;
+            --blue-glow: #5B9BD5;
+            --orange: #D4500A;
+            --orange-light: #FF7A35;
+            --cream: #FAF7F2;
+            --cream-dark: #EDE4D7;
+            --text: #1A1A2E;
+            --muted: #6B7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(145deg, #0D2E5E 0%, #1A4A8A 50%, #1E3A6E 100%);
+            color: var(--text);
+        }
+
+        /* LEFT PANEL */
+        .login-left {
+            width: 50%;
+            padding: 4rem 5rem;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* Orange top bar */
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #D4500A, #FF7A35, transparent);
+            pointer-events: none;
+        }
+
+        /* Diagonal pattern overlay */
+        .diagonal-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(45deg, transparent 0, transparent 27px, rgba(255, 255, 255, 0.025) 27px, rgba(255, 255, 255, 0.025) 28px);
+            pointer-events: none;
+        }
+
+        /* Top-left blue orb */
+        .orb-blue-tl {
+            position: absolute;
+            top: -150px;
+            left: -150px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(91, 155, 213, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* Bottom-right orange orb */
+        .orb-orange-br {
+            position: absolute;
+            bottom: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(212, 80, 10, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* Concentric circles - circle 1 */
+        .circle-1 {
+            position: absolute;
+            right: -160px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 520px;
+            height: 520px;
+            border: 1px solid rgba(91, 155, 213, 0.15);
+            border-radius: 50%;
+            animation: rotateSlow 30s linear infinite;
+            pointer-events: none;
+        }
+
+        /* Concentric circles - circle 2 */
+        .circle-2 {
+            position: absolute;
+            right: -80px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 360px;
+            height: 360px;
+            border: 1px solid rgba(91, 155, 213, 0.22);
+            border-radius: 50%;
+            animation: rotateSlow 20s linear infinite reverse;
+            pointer-events: none;
+        }
+
+        /* Concentric circles - circle 3 (soft glow) */
+        .circle-3 {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(91, 155, 213, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* LEFT CONTENT */
+        .brand-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Year badge */
+        .year-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            opacity: 0;
+            animation: slideDown 0.6s ease 0.1s forwards;
+        }
+
+        .year-badge::before {
+            content: '';
+            width: 40px;
+            height: 1px;
+            background: var(--orange);
+            flex-shrink: 0;
+        }
+
+        .year-badge-text {
+            color: var(--orange);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        /* Logo block */
+        .logo-block {
+            margin-bottom: 2.5rem;
+            opacity: 0;
+            animation: slideUp 0.7s ease 0.25s forwards;
+        }
+
+        .logo-ict {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo-ict-text {
+            color: var(--orange);
+            display: block;
+        }
+
+        .logo-university {
+            color: white;
+            display: block;
+        }
+
+        .logo-divider {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--orange), transparent);
+            margin: 1rem 0;
+        }
+
+        .logo-subtitle {
+            color: rgba(250, 247, 242, 0.85);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-weight: 600;
+            font-size: 0.82rem;
+        }
+
+        /* Tagline */
+        .tagline {
+            font-size: 1.05rem;
+            color: rgba(250, 247, 242, 0.6);
+            line-height: 1.8;
+            max-width: 340px;
+            margin-bottom: 3rem;
+            opacity: 0;
+            animation: slideUp 0.7s ease 0.4s forwards;
+        }
+
+        /* Feature list */
+        .feature-list {
+            opacity: 1;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            color: rgba(250, 247, 242, 0.55);
+            opacity: 0;
+            animation: slideUp 0.5s ease forwards;
+        }
+
+        .feature-item:nth-child(1) { animation-delay: 0.55s; }
+        .feature-item:nth-child(2) { animation-delay: 0.68s; }
+        .feature-item:nth-child(3) { animation-delay: 0.81s; }
+        .feature-item:nth-child(4) { animation-delay: 0.94s; }
+
+        .feature-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--orange);
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 0.4rem;
+            box-shadow: 0 0 8px rgba(212, 80, 10, 0.5);
+        }
+
+        .feature-text {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .feature-text b {
+            color: rgba(250, 247, 242, 0.9);
+            font-weight: 600;
+        }
+
+        /* RIGHT PANEL */
+        .login-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Right panel decorative blobs */
+        .blob-blue-br {
+            position: absolute;
+            bottom: -250px;
+            right: -250px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(91, 155, 213, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .blob-orange-tl {
+            position: absolute;
+            top: -200px;
+            left: -200px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(212, 80, 10, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Floating card */
+        .login-card {
+            width: 100%;
+            max-width: 460px;
+            background: var(--cream);
+            border-radius: 28px;
+            padding: 3.70rem 2.5rem;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.06);
+            opacity: 0;
+            animation: formReveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+        }
+
+        /* Form kicker */
+        .form-kicker {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .kicker-line {
+            width: 28px;
+            height: 2px;
+            background: var(--orange);
+            flex-shrink: 0;
+        }
+
+        .kicker-text {
+            color: var(--orange);
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+        }
+
+        /* Form title */
+        .login-card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        /* Form subtitle */
+        .login-card .subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+            font-weight: 400;
+        }
+
+        /* Role selector tabs */
+        .role-tabs {
+            display: flex;
+            background: var(--cream-dark);
+            border-radius: 14px;
+            padding: 4px;
+            margin-bottom: 1.25rem;
+            gap: 4px;
+        }
+
+        .role-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--muted);
+            transition: all 0.2s ease;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .role-tab.active {
+            background: white;
+            color: var(--blue-mid);
+            box-shadow: 0 2px 12px rgba(26, 74, 138, 0.12);
+        }
+
+        .role-tab-emoji {
+            font-size: 1rem;
+        }
+
+        /* Form groups */
+        .form-group {
+            margin-bottom: 0.85rem;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 3rem;
+            border: 1.5px solid var(--cream-dark);
+            border-radius: 12px;
+            background: white;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+
+        .form-control::placeholder {
+            color: #D1D5DB;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--blue-mid);
+            box-shadow: 0 0 0 4px rgba(26, 74, 138, 0.08);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            width: 1.2rem;
+            height: 1.2rem;
+            flex-shrink: 0;
+            color: var(--muted);
+            transition: color 0.2s ease;
+            pointer-events: none;
+        }
+
+        .form-control:focus + .input-icon {
+            color: var(--blue-mid);
+        }
+
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            color: #EF4444;
+            font-size: 0.75rem;
+            margin-top: 0.4rem;
+            font-weight: 500;
+        }
+
+        .errorlist li {
+            margin-bottom: 0.2rem;
+        }
+
+        /* Alert messages */
+        .alert {
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+            border: none;
+            border-left: 4px solid var(--blue-mid);
+            background: #EFF6FF;
+            color: #1E40AF;
+            font-size: 0.8rem;
+            margin-bottom: 1.5rem;
+            animation: slideDown 0.3s ease;
+        }
+
+        .alert-danger {
+            border-left-color: #EF4444;
+            background: #FEF2F2;
+            color: #991B1B;
+        }
+
+        /* Sign In button */
+        .btn-login {
+            width: 100%;
+            background: var(--blue-mid);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 0.9rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            left: -100%;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+            transition: none;
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
+            transition: left 0.5s ease;
+        }
+
+        .btn-login:hover {
+            background: var(--blue-light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(26, 74, 138, 0.35);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-icon {
+            width: 1.1rem;
+            height: 1.1rem;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--muted);
+        }
+
+        .login-footer a {
+            color: var(--blue-mid);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .login-footer a:hover {
+            color: var(--blue-light);
+        }
+
+        /* Version tag */
+        .version-tag {
+            position: absolute;
+            bottom: 1.5rem;
+            right: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: rgba(160, 174, 192, 0.6);
+            font-weight: 500;
+        }
+
+        /* KEYFRAME ANIMATIONS */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.15);
+                opacity: 0.6;
+            }
+        }
+
+        @keyframes rotateSlow {
+            from {
+                transform: translateY(-50%) rotate(0deg);
+            }
+            to {
+                transform: translateY(-50%) rotate(360deg);
+            }
+        }
+
+        @keyframes formReveal {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .login-left {
+                padding: 3rem 3rem;
+            }
+            .logo-ict {
+                font-size: 3.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            .login-left {
+                width: 100%;
+                height: auto;
+                padding: 3rem 2rem;
+                min-height: auto;
+            }
+
+            .login-right {
+                width: 100%;
+                height: auto;
+                padding: 2rem 1.5rem;
+            }
+
+            .logo-ict {
+                font-size: 2.5rem;
+            }
+
+            .tagline {
+                font-size: 1rem;
+                max-width: 100%;
+            }
+
+            .feature-item {
+                font-size: 0.85rem;
+            }
+
+            .login-card {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .circle-1, .circle-2, .circle-3 {
+                display: none;
+            }
+
+            .orb-blue-tl, .orb-orange-br {
+                display: none;
+            }
+
+            .version-tag {
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- LEFT PANEL -->
+    <div class="login-left">
+        <div class="diagonal-pattern"></div>
+        <div class="orb-blue-tl"></div>
+        <div class="orb-orange-br"></div>
+        <div class="circle-1"></div>
+        <div class="circle-2"></div>
+        <div class="circle-3"></div>
+
+        <div class="brand-content">
+            <!-- Year badge -->
+            <div class="year-badge">
+                <div class="year-badge-text">Cameroon · Est. 2012</div>
+            </div>
+
+            <!-- Logo block -->
+            <div class="logo-block">
+                <div class="logo-ict">
+                    <span class="logo-ict-text">ICT</span><span class="logo-university">University</span>
+                </div>
+                <div class="logo-divider"></div>
+                <div class="logo-subtitle">Results Management System</div>
+            </div>
+
+            <!-- Tagline -->
+            <p class="tagline">Secure exam results management with anonymous coding and role-based access control.</p>
+
+            <!-- Feature list -->
+            <div class="feature-list">
+                <div class="feature-item">
+                    <div class="feature-dot"></div>
+                    <div class="feature-text"><b>Anonymous Coding</b> — Sequential codes per course, full anonymity</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot"></div>
+                    <div class="feature-text"><b>Multi-Role System</b> — Admin, Registra & Professor dashboards</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot"></div>
+                    <div class="feature-text"><b>Smart Import</b> — CSV & Excel enrollment file support</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-dot"></div>
+                    <div class="feature-text"><b>Full Traceability</b> — Complete semester history & audit trail</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="login-right">
+        <div class="blob-blue-br"></div>
+        <div class="blob-orange-tl"></div>
+
+        <div class="login-card">
+            <!-- Kicker -->
+            <div class="form-kicker">
+                <div class="kicker-line"></div>
+                <div class="kicker-text">Secure Portal</div>
+            </div>
+
+            <!-- Title -->
+            <h2>Sign in to<br>your account</h2>
+
+            <!-- Subtitle -->
+            <p class="subtitle">Enter your credentials to access the system</p>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Role selector tabs -->
+            <div class="role-tabs">
+                <button type="button" class="role-tab active" data-role="registra">
+                    <span class="role-tab-emoji">🎓</span>
+                    <span>Registra</span>
+                </button>
+                <button type="button" class="role-tab" data-role="professor">
+                    <span class="role-tab-emoji">👨‍🏫</span>
+                    <span>Professor</span>
+                </button>
+                <button type="button" class="role-tab" data-role="admin">
+                    <span class="role-tab-emoji">⚙️</span>
+                    <span>Admin</span>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Username field -->
+                <div class="form-group">
+                    <label for="id_username" class="form-label">Username</label>
+                    <div class="input-wrapper">
+                        {{ form.username }}
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>
+                    {% if form.username.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <!-- Password field -->
+                <div class="form-group">
+                    <label for="id_password" class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        {{ form.password }}
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                    {% if form.password.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.password.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {% if form.non_field_errors %}
+                        <ul class="errorlist">
+                            {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+
+                <!-- Sign In button -->
+                <button type="submit" class="btn-login">
+                    <svg class="btn-icon" viewBox="0 0 24 24">
+                        <path d="M5 12h14M12 5l7 7-7 7"></path>
+                    </svg>
+                    Sign In
+                </button>
+            </form>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                Need help? <a href="#">Contact ICT IT Support</a>
+            </div>
+        </div>
+
+        <!-- Version tag -->
+        <div class="version-tag">v2.0 · 2026</div>
+    </div>
+
+    <script>
+        // Role tab switching
+        const roleTabs = document.querySelectorAll('.role-tab');
+        roleTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                roleTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

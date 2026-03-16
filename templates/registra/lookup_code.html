@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% block title %}Lookup Student Code{% endblock %}
+{% block content %}
+
+<style>
+.lookup-wrap {
+  max-width: 600px;
+  animation: fadeInUp 0.5s ease both;
+}
+.form-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 2rem; margin-bottom: 1.5rem;
+}
+.form-card-title {
+  font-size: 0.88rem; font-weight: 700; color: #0F1C2E;
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid #EEF2F8;
+}
+.form-group { margin-bottom: 1.25rem; }
+.form-label {
+  display: block; font-size: 0.75rem; font-weight: 700;
+  color: #374151; text-transform: uppercase;
+  letter-spacing: 0.08em; margin-bottom: 0.5rem;
+}
+.form-control {
+  width: 100%; padding: 0.75rem 1rem;
+  border: 1.5px solid #EEF2F8; border-radius: 12px;
+  font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+  color: #0F1C2E; outline: none; transition: all 0.2s;
+  background: #F8FAFF;
+}
+.form-control:focus {
+  border-color: #1A4A8A; background: white;
+  box-shadow: 0 0 0 3px rgba(26,74,138,0.08);
+}
+.form-select {
+  width: 100%; padding: 0.75rem 1rem;
+  border: 1.5px solid #EEF2F8; border-radius: 12px;
+  font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+  color: #0F1C2E; outline: none; transition: all 0.2s;
+  background: #F8FAFF; cursor: pointer;
+}
+.form-select:focus {
+  border-color: #1A4A8A; background: white;
+  box-shadow: 0 0 0 3px rgba(26,74,138,0.08);
+}
+.btn-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.65rem 1.25rem; border-radius: 10px;
+  font-size: 0.82rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+}
+.btn-primary { background: #1A4A8A; color: white; }
+.btn-primary:hover { background: #2563B0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,74,138,0.25); }
+.btn-ghost { background: #F8FAFF; color: #1A4A8A; }
+.btn-ghost:hover { background: #EEF4FF; }
+
+.result-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  overflow: hidden; animation: fadeInUp 0.4s ease both;
+}
+.result-card-header {
+  padding: 1rem 1.5rem; background: #F8FAFF;
+  border-bottom: 1px solid #EEF2F8;
+  font-size: 0.72rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.result-card-body {
+  padding: 1.5rem;
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 1rem;
+}
+.result-student-name {
+  font-size: 1.1rem; font-weight: 700; color: #0F1C2E;
+  margin-bottom: 0.25rem;
+}
+.result-student-meta { font-size: 0.8rem; color: #6B7280; }
+.result-code-box {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem; font-weight: 700; color: #1A4A8A;
+  background: #EEF4FF; padding: 0.5rem 1.25rem;
+  border-radius: 14px; border: 1px solid rgba(26,74,138,0.15);
+  text-align: center; min-width: 100px;
+}
+.result-code-label {
+  font-size: 0.65rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  text-align: center; margin-top: 0.3rem;
+}
+
+.alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.25rem; font-size: 0.85rem;
+  font-weight: 500;
+}
+.alert-danger { background: #FEF2F2; color: #991B1B; border-left: 4px solid #DC2626; }
+.alert-info   { background: #EFF6FF; color: #1E40AF; border-left: 4px solid #1A4A8A; }
+
+.section-title {
+  font-size: 0.72rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: #EEF2F8; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<div class="lookup-wrap">
+  <!-- SEARCH FORM -->
+  <div class="form-card">
+    <h3 class="form-card-title">🔍 Find Anonymous Code</h3>
+    
+    <form method="get">
+      <div class="form-group">
+        <label class="form-label">Student Matricule</label>
+        <input type="text" name="matricule" value="{{ request.GET.matricule }}" 
+               placeholder="e.g. STU2024001" class="form-control" required>
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Filter by Course (optional)</label>
+        <select name="course_id" class="form-select">
+          <option value="">— All courses this semester —</option>
+          {% for c in courses %}
+            <option value="{{ c.id }}" {% if request.GET.course_id == c.id|stringformat:"i" %}selected{% endif %}>
+              {{ c.code }} — {{ c.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary" style="flex:1;">Search</button>
+        <a href="{% url 'lookup_code' %}" class="btn btn-ghost">Clear</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- RESULT CARD -->
+  {% if result %}
+  <div class="result-card">
+    <div class="result-card-header">
+      Student Code Result
+    </div>
+    <div class="result-card-body">
+      <div style="display:flex; align-items:center; gap:1rem; flex:1;">
+        <div style="font-size:2rem;">🎓</div>
+        <div>
+          <div class="result-student-name">{{ result.student.full_name }}</div>
+          <div class="result-student-meta">
+            <code style="font-family:'JetBrains Mono',monospace;">{{ result.student.matricule }}</code>
+            <span style="margin:0 0.5rem;">•</span>
+            <span>{{ result.course.code }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;">
+        <div class="result-code-box">{{ result.anonymous_code }}</div>
+        <div class="result-code-label">Anonymous Code</div>
+      </div>
+    </div>
+    {% if result.course.semester %}
+    <div style="padding:0.75rem 1.5rem; background:#F8FAFF; border-top:1px solid #EEF2F8; font-size:0.75rem; color:#6B7280;">
+      📚 {{ result.course.name }} | Semester: {{ result.course.semester.name }}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

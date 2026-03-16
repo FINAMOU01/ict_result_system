@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% block title %}Semester History{% endblock %}
+{% block content %}
+
+<style>
+.search-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;
+  display: flex; gap: 0.75rem; align-items: center;
+  animation: fadeInUp 0.4s ease both;
+}
+.search-input {
+  flex: 1; padding: 0.7rem 1rem;
+  border: 1.5px solid #EEF2F8; border-radius: 12px;
+  font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+  color: #0F1C2E; outline: none; transition: all 0.2s;
+  background: #F8FAFF;
+}
+.search-input:focus {
+  border-color: #1A4A8A; background: white;
+  box-shadow: 0 0 0 3px rgba(26,74,138,0.08);
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.65rem 1.1rem; border-radius: 10px;
+  font-size: 0.82rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-primary { background: #1A4A8A; color: white; }
+.btn-primary:hover { background: #2563B0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,74,138,0.25); }
+.btn-ghost { background: #F8FAFF; color: #1A4A8A; }
+.btn-ghost:hover { background: #EEF4FF; }
+.btn-orange { background: #D4500A; color: white; }
+.btn-orange:hover { background: #FF7A35; transform: translateY(-1px); }
+.btn-success { background: #059669; color: white; }
+.btn-success:hover { background: #047857; transform: translateY(-1px); }
+.btn-outline { background: white; color: #0F1C2E; border: 1.5px solid #EEF2F8; }
+.btn-outline:hover { border-color: #D4500A; color: #D4500A; background: #FFF4EE; }
+
+.stats-mini-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1rem; margin-bottom: 1.5rem;
+}
+.stat-mini-card {
+  background: white; border-radius: 16px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(13,46,94,0.05);
+  padding: 1.1rem 1.25rem; position: relative;
+  overflow: hidden; animation: fadeInUp 0.5s ease both;
+}
+.stat-mini-card:nth-child(1){animation-delay:0.1s}
+.stat-mini-card:nth-child(2){animation-delay:0.2s}
+.stat-mini-card:nth-child(3){animation-delay:0.3s}
+.stat-mini-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; border-radius: 16px 16px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.stat-mini-icon {
+  width: 36px; height: 36px; background: #FFF4EE;
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; font-size: 1rem; margin-bottom: 0.75rem;
+  border: 1px solid rgba(212,80,10,0.12);
+}
+.stat-mini-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.6rem; font-weight: 600; color: #0F1C2E;
+  display: block; line-height: 1; margin-bottom: 0.2rem;
+}
+.stat-mini-label { font-size: 0.75rem; color: #6B7280; font-weight: 500; }
+
+.section-title {
+  font-size: 0.72rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: #EEF2F8; }
+
+.accordion {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  overflow: hidden; margin-bottom: 1rem;
+  animation: fadeInUp 0.5s ease both;
+}
+.accordion:nth-child(1){animation-delay:0.1s}
+.accordion:nth-child(2){animation-delay:0.2s}
+.accordion:nth-child(3){animation-delay:0.3s}
+.accordion-header {
+  padding: 1.25rem 1.5rem;
+  display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer;
+  transition: background 0.15s;
+}
+.accordion-header:hover { background: #FAFBFF; }
+.accordion-left { display: flex; flex-direction: column; gap: 0.2rem; }
+.accordion-title {
+  font-size: 0.92rem; font-weight: 700; color: #0F1C2E;
+}
+.accordion-meta { font-size: 0.75rem; color: #6B7280; }
+.accordion-right {
+  display: flex; align-items: center; gap: 0.75rem;
+}
+.accordion-pills { display: flex; gap: 0.4rem; }
+.pill {
+  display: inline-flex; align-items: center;
+  padding: 0.2rem 0.6rem; border-radius: 999px;
+  font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.pill-blue   { background: #EEF4FF; color: #1A4A8A; }
+.pill-green  { background: #ECFDF5; color: #065F46; }
+.pill-purple { background: #F5F3FF; color: #7C3AED; }
+.accordion-arrow {
+  font-size: 0.85rem; color: #CBD5E1;
+  transition: transform 0.25s ease;
+}
+.accordion-arrow.open { transform: rotate(90deg); }
+
+.accordion-body { border-top: 1px solid #EEF2F8; display: none; }
+.accordion-body.open { display: block; }
+
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  padding: 0.75rem 1.25rem; text-align: left;
+  font-size: 0.68rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: #F8FAFF; border-bottom: 1px solid #EEF2F8;
+}
+.data-table td {
+  padding: 0.875rem 1.25rem; font-size: 0.82rem;
+  color: #0F1C2E; border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #FAFBFF; transition: background 0.15s; }
+.course-code-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem; font-weight: 600; color: #1A4A8A;
+}
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 0.22rem 0.65rem; border-radius: 999px;
+  font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+.badge-master   { background: #F5F3FF; color: #7C3AED; }
+.badge-bachelor { background: #EEF2FF; color: #4338CA; }
+.badge-phd      { background: #FFF7ED; color: #C2410C; }
+.badge-coded    { background: #EEF4FF; color: #1E40AF; }
+.badge-not-coded{ background: #FFFBEB; color: #92400E; }
+.badge-awaiting { background: #F1F5F9; color: #64748B; }
+.badge-received { background: #ECFDF5; color: #065F46; }
+.badge-decoded  { background: #F5F3FF; color: #7C3AED; }
+.action-links { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+
+.empty-state {
+  text-align: center; padding: 3rem 2rem;
+  color: #6B7280; font-size: 0.875rem;
+}
+.empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- SEARCH CARD -->
+<div class="search-card">
+  <form method="get" style="display:flex; gap:0.75rem; align-items:center; width:100%;">
+    <input type="text" name="q" value="{{ query }}" 
+           placeholder="Search by semester name or academic year..." 
+           class="search-input">
+    <button type="submit" class="btn btn-primary">🔍 Search</button>
+    {% if query %}
+      <a href="{% url 'registra_semester_history' %}" class="btn btn-ghost">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- SUMMARY STATS -->
+<div class="stats-mini-grid">
+  <div class="stat-mini-card">
+    <div class="stat-mini-icon">📚</div>
+    <span class="stat-mini-value">{{ total_courses }}</span>
+    <span class="stat-mini-label">Total Courses</span>
+  </div>
+  <div class="stat-mini-card">
+    <div class="stat-mini-icon">✅</div>
+    <span class="stat-mini-value">{{ total_graded }}</span>
+    <span class="stat-mini-label">Courses Graded</span>
+  </div>
+  <div class="stat-mini-card">
+    <div class="stat-mini-icon">�</div>
+    <span class="stat-mini-value">{{ semesters_with_data|length }}</span>
+    <span class="stat-mini-label">Total Semesters</span>
+  </div>
+</div>
+
+<!-- SEMESTERS ACCORDION -->
+{% if semesters_with_data %}
+
+<div class="section-title">📋 Semester History</div>
+
+{% for item in semesters_with_data %}
+{% with semester=item.semester courses=item.courses graded_count=item.graded_count decoded_count=item.decoded_count %}
+
+<div class="accordion">
+  <div class="accordion-header" onclick="this.parentElement.querySelector('.accordion-body').classList.toggle('open'); this.querySelector('.accordion-arrow').classList.toggle('open');">
+    <div class="accordion-left">
+      <div class="accordion-title">{{ semester.name }}</div>
+      <div class="accordion-meta">{{ semester.academic_year }} • {{ courses.count }} course{{ courses.count|pluralize }}</div>
+    </div>
+    <div class="accordion-right">
+      <div class="accordion-pills">
+        <span class="pill pill-blue">{{ courses.count }}</span>
+        <span class="pill pill-green">{{ graded_count }} ✓</span>
+        <span class="pill pill-purple">{{ decoded_count }} 🔓</span>
+        {% if semester.id == active_semester.id %}
+          <span class="pill" style="background:#ECFDF5;color:#065F46;">Active</span>
+        {% endif %}
+      </div>
+      <span class="accordion-arrow">›</span>
+    </div>
+  </div>
+
+  <div class="accordion-body">
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Course</th>
+            <th>Level</th>
+            <th>Professor</th>
+            <th>Students</th>
+            <th>Coding</th>
+            <th>Grades</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+          <tr>
+            <td><span class="course-code-cell">{{ course.code }}</span></td>
+            <td style="font-weight:600;color:#0F1C2E;">{{ course.name }}</td>
+            <td>
+              {% if course.level == 'master' %}
+                <span class="badge badge-master">Master</span>
+              {% elif course.level == 'phd' %}
+                <span class="badge badge-phd">PhD</span>
+              {% else %}
+                <span class="badge badge-bachelor">Bachelor</span>
+              {% endif %}
+            </td>
+            <td style="font-size:0.8rem;">{{ course.professor.get_full_name|default:"—" }}</td>
+            <td><span class="badge badge-awaiting">{{ course.student_count }}</span></td>
+            <td>
+              {% if course.is_coded %}
+                <span class="badge badge-coded">✓ Coded</span>
+              {% else %}
+                <span class="badge badge-not-coded">Not Coded</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if course.grades_submitted %}
+                <span class="badge badge-received">✓ Received</span>
+              {% else %}
+                <span class="badge badge-awaiting">Awaiting</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="action-links">
+                <a href="{% url 'registra_course_detail' course.id %}" class="btn btn-outline">View</a>
+                {% if not course.is_coded %}
+                  <a href="{% url 'generate_codes' course.id %}" class="btn btn-orange">Code</a>
+                {% elif course.is_coded and not course.grades_submitted %}
+                  <a href="{% url 'download_coding_sheet' course.id %}" class="btn btn-ghost">⬇ Sheet</a>
+                {% elif course.grades_submitted and not course.is_decoded %}
+                  <a href="{% url 'registra_anonymous_results' course.id %}" class="btn btn-primary">Anon</a>
+                {% elif course.is_decoded %}
+                  <a href="{% url 'registra_decoded_results' course.id %}" class="btn btn-success">Decoded</a>
+                  <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇</a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" style="text-align:center;padding:2rem;color:#9CA3AF;">
+              No courses this semester.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% endwith %}
+{% endfor %}
+
+{% else %}
+<div class="empty-state">
+  <span class="empty-state-icon">🔍</span>
+  <p>No semesters found matching your search.</p>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Admin <span class="highlight">Dashboard</span>{% endblock %}
+
+{% block content %}
+<!-- Key Metrics -->
+<div class="section-title">Key Metrics</div>
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <span class="stat-value">{{ stats.students|default:0 }}</span>
+        <span class="stat-label">Total Students</span>
+        <span class="stat-trend">↑ This semester</span>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <span class="stat-value">{{ stats.courses|default:0 }}</span>
+        <span class="stat-label">Active Courses</span>
+        <span class="stat-trend">↑ Filled</span>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <span class="stat-value">{{ stats.grades_submitted|default:0 }}</span>
+        <span class="stat-label">Grades Submitted</span>
+        <span class="stat-trend">↑ Done</span>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">👨‍🏫</div>
+        <span class="stat-value">{{ stats.professors|default:0 }}</span>
+        <span class="stat-label">Professors</span>
+        <span class="stat-trend">↑ Active</span>
+    </div>
+</div>
+
+<!-- Bottom grid: Activity -->
+<div class="bottom-grid">
+    <!-- Activity Feed -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Activity</h3>
+        </div>
+        <div>
+            {% if stats.import_logs %}
+                {% for log in stats.import_logs|slice:":5" %}
+                <div class="activity-item">
+                    <div class="activity-dot dot-orange">📤</div>
+                    <div>
+                        <div class="activity-title">{{ log.file_name|truncatewords:3 }}</div>
+                        <div class="activity-sub">{{ log.students_created }} students • {{ log.courses_created }} courses</div>
+                        <div class="activity-time">{{ log.created_at|date:"M d, H:i" }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="activity-item" style="justify-content:center;color:#999;text-align:center;padding:2rem;">
+                    <span>No activity yet</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+        /* Stat cards grid */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .stat-card {
+            position: relative;
+            background: #FFFFFF;
+            border: 1px solid #EEF2F8;
+            border-radius: 20px;
+            padding: 1.35rem 1.25rem 1.25rem;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 2px 16px rgba(13, 46, 94, 0.06);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 20px 20px 0 0;
+            background: linear-gradient(90deg, #D4500A, #FF7A35);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 32px rgba(13, 46, 94, 0.1);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            background: #FFF4EE;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(212, 80, 10, 0.12);
+        }
+
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #0F1C2E;
+            display: block;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+
+        .stat-label {
+            font-size: 0.78rem;
+            color: #6B7280;
+            font-weight: 500;
+            display: block;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            background: #FFF4EE;
+            color: #D4500A;
+            border: 1px solid rgba(212, 80, 10, 0.15);
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+        }
+
+        /* Bottom grid */
+        .bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        /* Activity items */
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.875rem;
+            padding: 0.875rem 1.5rem;
+            border-bottom: 1px solid #F1F5F9;
+            transition: background 0.15s;
+        }
+
+        .activity-item:hover {
+            background: #FAFBFF;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-dot {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+
+        .dot-blue { background: #EEF4FF; }
+        .dot-orange { background: #FFF4EE; }
+        .dot-green { background: #ECFDF5; }
+        .dot-purple { background: #F5F3FF; }
+
+        .activity-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0F1C2E;
+            margin-bottom: 0.15rem;
+        }
+
+        .activity-sub {
+            font-size: 0.72rem;
+            color: #6B7280;
+        }
+
+        .activity-time {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: #C4C9D4;
+            margin-top: 0.25rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stat-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .bottom-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}

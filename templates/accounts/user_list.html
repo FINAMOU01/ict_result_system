@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}User Management{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+    <h6 class="text-muted mb-0">{{ users.count }} user(s) total</h6>
+    <a href="{% url 'create_user' %}" class="btn btn-ict btn-sm px-4"><i class="bi bi-person-plus me-1"></i>Create User</a>
+</div>
+<div class="ict-table">
+    <table class="table mb-0">
+        <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Department</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td class="fw-semibold">{{ u.get_full_name }}</td>
+                <td><code>{{ u.username }}</code></td>
+                <td style="font-size:0.85rem;">{{ u.email|default:"—" }}</td>
+                <td><span class="user-role role-{{ u.role }} d-inline-block">{{ u.get_role_display }}</span></td>
+                <td style="font-size:0.85rem;">{{ u.department|default:"—" }}</td>
+                <td>{% if u.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Inactive</span>{% endif %}</td>
+                <td>
+                    <form method="post" action="{% url 'toggle_user_active' u.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                            {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center text-muted py-4">No users created yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

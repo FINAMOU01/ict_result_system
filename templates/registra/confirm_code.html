@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Generate Codes{% endblock %}
+{% block content %}
+
+<style>
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 600; color: #6B7280;
+  text-decoration: none; margin-bottom: 1.25rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #1A4A8A; }
+
+.confirm-wrapper {
+  max-width: 600px; margin: 0 auto;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.confirm-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 2.5rem; text-align: center;
+  position: relative; overflow: hidden;
+}
+.confirm-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+
+.confirm-icon {
+  font-size: 3.5rem; margin-bottom: 1.5rem; display: block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.confirm-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem; font-weight: 700; color: #0F1C2E;
+  margin-bottom: 0.5rem;
+}
+
+.confirm-meta {
+  display: flex; flex-direction: column; gap: 0.3rem;
+  margin-bottom: 1.5rem;
+}
+.confirm-meta-item {
+  font-size: 0.85rem; color: #6B7280;
+}
+.confirm-meta-course {
+  font-weight: 700; color: #0F1C2E;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.warning-alert {
+  padding: 1.25rem 1.5rem; border-radius: 14px;
+  margin-bottom: 1.75rem; font-size: 0.85rem;
+  background: #FEF3C7; color: #92400E;
+  border-left: 4px solid #F59E0B;
+  text-align: left; display: flex; gap: 0.75rem; align-items: flex-start;
+  animation: fadeInUp 0.5s ease 0.1s both;
+}
+.warning-alert strong {
+  color: #78350F; display: block; margin-bottom: 0.3rem;
+}
+.warning-alert-icon {
+  font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem;
+}
+
+.action-buttons {
+  display: flex; gap: 0.75rem; align-items: center;
+  flex-wrap: wrap; justify-content: center;
+  animation: fadeInUp 0.5s ease 0.2s both;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.75rem 1.5rem; border-radius: 10px;
+  font-size: 0.85rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-primary { background: #1A4A8A; color: white; }
+.btn-primary:hover { background: #2563B0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,74,138,0.25); }
+.btn-orange { background: #D4500A; color: white; }
+.btn-orange:hover { background: #FF7A35; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(212,80,10,0.25); }
+.btn-outline { background: white; color: #0F1C2E; border: 1.5px solid #EEF2F8; }
+.btn-outline:hover { border-color: #D4500A; color: #D4500A; background: #FFF4EE; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- BACK LINK -->
+<a href="{% url 'registra_course_detail' course.id %}" class="back-link">← Back to Course</a>
+
+<!-- CONFIRM CARD -->
+<div class="confirm-wrapper">
+  <div class="confirm-card">
+    <span class="confirm-icon">🔐</span>
+    
+    <h1 class="confirm-title">Generate Anonymous Codes</h1>
+    
+    <div class="confirm-meta">
+      <div class="confirm-meta-item">
+        <span class="confirm-meta-course">{{ course.code }}</span>
+      </div>
+      <div class="confirm-meta-item">{{ course.name }}</div>
+      <div class="confirm-meta-item">
+        📅 {{ course.semester.name }} • 👥 {{ course.enrollment_count }} student{{ course.enrollment_count|pluralize }}
+      </div>
+    </div>
+
+    <!-- WARNING ALERT -->
+    <div class="warning-alert">
+      <span class="warning-alert-icon">⚠️</span>
+      <div>
+        <strong>This action cannot be undone.</strong>
+        <p style="margin:0.4rem 0 0; font-size:0.8rem; line-height:1.4;">
+          Once codes are generated, each student will receive a permanent anonymous number for this course. Download the coding sheet immediately after.
+        </p>
+      </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <form method="post" style="display:inline;">
+      {% csrf_token %}
+      <div class="action-buttons">
+        <button type="submit" class="btn btn-orange">
+          🔀 Confirm & Generate Codes
+        </button>
+        <a href="{% url 'registra_course_detail' course.id %}" class="btn btn-outline">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

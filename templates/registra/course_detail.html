@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.code }} — Student List{% endblock %}
+{% block content %}
+
+<style>
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 600; color: #6B7280;
+  text-decoration: none; margin-bottom: 1.25rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #1A4A8A; }
+
+.course-header-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 1.5rem; margin-bottom: 1.5rem;
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 1rem;
+  animation: fadeInUp 0.4s ease both;
+  position: relative; overflow: hidden;
+}
+.course-header-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.course-header-left { display: flex; flex-direction: column; gap: 0.4rem; }
+.course-header-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; font-weight: 600; color: #1A4A8A;
+}
+.course-header-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 700; color: #0F1C2E;
+}
+.course-header-meta {
+  display: flex; align-items: center; gap: 0.75rem;
+  flex-wrap: wrap; margin-top: 0.25rem;
+}
+.course-header-meta span {
+  font-size: 0.78rem; color: #6B7280;
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.course-header-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 0.5rem;
+}
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 0.22rem 0.65rem; border-radius: 999px;
+  font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+.badge-master   { background: #F5F3FF; color: #7C3AED; }
+.badge-bachelor { background: #EEF2FF; color: #4338CA; }
+.badge-phd      { background: #FFF7ED; color: #C2410C; }
+.badge-coded    { background: #EEF4FF; color: #1E40AF; }
+.badge-not-coded{ background: #FFFBEB; color: #92400E; }
+.badge-awaiting { background: #F1F5F9; color: #64748B; }
+.badge-received { background: #ECFDF5; color: #065F46; }
+.badge-decoded  { background: #F5F3FF; color: #7C3AED; }
+
+.action-bar {
+  background: white; border-radius: 16px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  padding: 1rem 1.5rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 1rem;
+  animation: fadeInUp 0.4s ease 0.1s both;
+}
+.action-bar-info { font-size: 0.82rem; color: #6B7280; }
+.action-bar-info strong { color: #0F1C2E; font-weight: 700; }
+.action-bar-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.5rem 0.9rem; border-radius: 10px;
+  font-size: 0.78rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-primary { background: #1A4A8A; color: white; }
+.btn-primary:hover { background: #2563B0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,74,138,0.25); }
+.btn-orange  { background: #D4500A; color: white; }
+.btn-orange:hover  { background: #FF7A35; transform: translateY(-1px); }
+.btn-success { background: #059669; color: white; }
+.btn-success:hover { background: #047857; transform: translateY(-1px); }
+.btn-outline { background: white; color: #0F1C2E; border: 1.5px solid #EEF2F8; }
+.btn-outline:hover { border-color: #D4500A; color: #D4500A; background: #FFF4EE; }
+.btn-ghost   { background: #F8FAFF; color: #1A4A8A; }
+.btn-ghost:hover   { background: #EEF4FF; }
+
+.info-alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.25rem; font-size: 0.85rem; font-weight: 500;
+  background: #EFF6FF; color: #1E40AF;
+  border-left: 4px solid #1A4A8A;
+  animation: fadeInUp 0.4s ease 0.15s both;
+}
+.success-alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.25rem; font-size: 0.85rem; font-weight: 500;
+  background: #ECFDF5; color: #065F46;
+  border-left: 4px solid #059669;
+  animation: fadeInUp 0.4s ease 0.15s both;
+}
+
+.section-title {
+  font-size: 0.72rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: #EEF2F8; }
+
+.table-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease 0.2s both;
+}
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  padding: 0.75rem 1.25rem; text-align: left;
+  font-size: 0.68rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: #F8FAFF; border-bottom: 1px solid #EEF2F8;
+}
+.data-table td {
+  padding: 0.875rem 1.25rem; font-size: 0.82rem;
+  color: #0F1C2E; border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #FAFBFF; transition: background 0.15s; }
+.code-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem; font-weight: 700; color: #1A4A8A;
+  background: #EEF4FF; padding: 0.2rem 0.6rem;
+  border-radius: 8px; border: 1px solid rgba(26,74,138,0.15);
+  display: inline-block;
+}
+.pass-badge  { color: #059669; font-weight: 700; }
+.fail-badge  { color: #DC2626; font-weight: 700; }
+.score-cell  {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; font-weight: 600; color: #0F1C2E;
+}
+
+.empty-state {
+  text-align: center; padding: 3rem 2rem;
+  color: #6B7280; font-size: 0.875rem;
+}
+.empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- BACK LINK -->
+<a href="{% url 'registra_dashboard' %}" class="back-link">← Back to Dashboard</a>
+
+<!-- COURSE HEADER CARD -->
+<div class="course-header-card">
+  <div class="course-header-left">
+    <div class="course-header-code">{{ course.code }}</div>
+    <div class="course-header-name">{{ course.name }}</div>
+    <div class="course-header-meta">
+      <span>📅 {{ course.semester.name }}</span>
+      <span>👨‍🏫 {{ course.professor.get_full_name|default:"No professor assigned" }}</span>
+    </div>
+  </div>
+  <div class="course-header-right">
+    {% if course.level == 'master' %}
+      <span class="badge badge-master">Master</span>
+    {% elif course.level == 'phd' %}
+      <span class="badge badge-phd">PhD</span>
+    {% else %}
+      <span class="badge badge-bachelor">Bachelor</span>
+    {% endif %}
+    {% if course.is_coded %}
+      <span class="badge badge-coded">✓ Coded</span>
+    {% else %}
+      <span class="badge badge-not-coded">Not Coded</span>
+    {% endif %}
+    {% if course.grades_submitted %}
+      <span class="badge badge-received">✓ Grades Received</span>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <div class="action-bar-info">
+    <strong>{{ enrollments.count }}</strong> student{{ enrollments.count|pluralize }}
+  </div>
+  <div class="action-bar-btns">
+    {% if not course.is_coded %}
+      <a href="{% url 'add_walkin_student' course.id %}" class="btn btn-success">+ Add Walk-in Student</a>
+      <a href="{% url 'generate_codes' course.id %}" class="btn btn-orange">🔀 Generate Codes</a>
+    {% else %}
+      <a href="{% url 'download_coding_sheet' course.id %}" class="btn btn-primary">⬇ Download Confidential Sheet</a>
+      {% if course.grades_submitted %}
+        <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇ Download Results</a>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<!-- SEARCH FORM -->
+<div style="background:white; border-radius:16px; border:1px solid #EEF2F8; padding:1.25rem 1.5rem; margin-bottom:1.25rem; display:flex; gap:0.75rem; align-items:center; animation:fadeInUp 0.4s ease 0.2s both;">
+  <form method="get" style="display:flex; gap:0.75rem; align-items:center; flex:1;">
+    <input type="text" name="q" value="{{ query }}" 
+           placeholder="Search student by name or matricule..." 
+           style="flex:1; padding:0.7rem 1rem; border:1.5px solid #EEF2F8; border-radius:12px; font-size:0.9rem; font-family:'DM Sans',sans-serif; color:#0F1C2E; outline:none; transition:all 0.2s; background:#F8FAFF;"
+           onfocus="this.style.borderColor='#1A4A8A'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(26,74,138,0.08)';"
+           onblur="this.style.borderColor='#EEF2F8'; this.style.background='#F8FAFF'; this.style.boxShadow='none';">
+    <button type="submit" class="btn btn-primary">🔍 Search</button>
+    {% if query %}
+      <a href="{% url 'registra_course_detail' course.id %}" class="btn btn-ghost">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- STUDENTS TABLE -->
+<div class="table-card">
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Matricule</th>
+          {% if not course.is_coded %}
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+          {% else %}
+            <th>Anonymous Code</th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for enrollment in enrollments %}
+        <tr>
+          <td style="color:#94a3b8; font-size:0.8rem; font-weight:500;">{{ forloop.counter }}</td>
+          <td>
+            <span class="code-cell">{{ enrollment.student.matricule }}</span>
+            {% if enrollment.student.is_walkin %}
+              <span style="background:#FFF7ED; color:#C2410C; border:1px solid #FED7AA; padding:0.3rem 0.6rem; border-radius:8px; font-size:0.7rem; margin-left:0.5rem; display:inline-block; font-weight:600;">⚠️ Walk-in</span>
+            {% endif %}
+          </td>
+          {% if not course.is_coded %}
+            <td>{{ enrollment.student.first_name }}</td>
+            <td>{{ enrollment.student.last_name }}</td>
+            <td style="font-size:0.8rem;">{{ enrollment.student.email|default:"—" }}</td>
+          {% else %}
+            <td>
+              {% if enrollment.anonymous_code %}
+                <span class="code-cell">{{ enrollment.anonymous_code }}</span>
+              {% else %}
+                <span style="color:#9CA3AF;">—</span>
+              {% endif %}
+            </td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="{% if not course.is_coded %}5{% else %}3{% endif %}" style="text-align:center; padding:2rem; color:#9CA3AF;">
+            <span style="font-size:2rem; display:block; margin-bottom:0.5rem;">👥</span>
+            No students found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% block title %}Decoded Results — {{ course.code }}{% endblock %}
+{% block content %}
+
+<style>
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 600; color: #6B7280;
+  text-decoration: none; margin-bottom: 1.25rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #1A4A8A; }
+
+.course-header-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 1.5rem; margin-bottom: 1.5rem;
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 1rem;
+  animation: fadeInUp 0.4s ease both;
+  position: relative; overflow: hidden;
+}
+.course-header-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.course-header-left { display: flex; flex-direction: column; gap: 0.4rem; }
+.course-header-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; font-weight: 600; color: #1A4A8A;
+}
+.course-header-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 700; color: #0F1C2E;
+}
+.course-header-meta {
+  display: flex; align-items: center; gap: 0.75rem;
+  flex-wrap: wrap; margin-top: 0.25rem;
+}
+.course-header-meta span {
+  font-size: 0.78rem; color: #6B7280;
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.course-header-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 0.5rem;
+}
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 0.22rem 0.65rem; border-radius: 999px;
+  font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+.badge-master   { background: #F5F3FF; color: #7C3AED; }
+.badge-bachelor { background: #EEF2FF; color: #4338CA; }
+.badge-phd      { background: #FFF7ED; color: #C2410C; }
+.badge-decoded  { background: #F5F3FF; color: #7C3AED; }
+
+.success-alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 500;
+  background: #ECFDF5; color: #065F46;
+  border-left: 4px solid #059669;
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  animation: fadeInUp 0.4s ease 0.1s both;
+}
+.success-alert strong { color: #065F46; }
+
+.section-title {
+  font-size: 0.72rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: #EEF2F8; }
+
+.table-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease 0.2s both;
+}
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  padding: 0.75rem 1.25rem; text-align: left;
+  font-size: 0.68rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: #F8FAFF; border-bottom: 1px solid #EEF2F8;
+}
+.data-table td {
+  padding: 0.875rem 1.25rem; font-size: 0.82rem;
+  color: #0F1C2E; border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #FAFBFF; transition: background 0.15s; }
+
+.row-pass td { background: #F0FDF4 !important; }
+.row-pass:hover td { background: #E6FBEB !important; }
+.row-fail td { background: #FEF2F2 !important; }
+.row-fail:hover td { background: #FEE8E8 !important; }
+
+.student-name-cell {
+  font-weight: 700; color: #0F1C2E;
+  font-size: 0.85rem;
+}
+.student-id-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; font-weight: 600; color: #1A4A8A;
+}
+.score-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem; font-weight: 600; color: #0F1C2E;
+  text-align: center;
+}
+.score-empty {
+  color: #CBD5E1; font-style: italic;
+}
+.status-pass {
+  color: #059669; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;
+}
+.status-fail {
+  color: #DC2626; font-weight: 700; display: flex; align-items: center; gap: 0.3rem;
+}
+
+.action-bar {
+  margin-top: 1.5rem; display: flex; gap: 0.75rem; align-items: center;
+  animation: fadeInUp 0.5s ease 0.3s both;
+}
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.65rem 1.25rem; border-radius: 10px;
+  font-size: 0.82rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-success { background: #059669; color: white; }
+.btn-success:hover { background: #047857; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.25); }
+.btn-outline { background: white; color: #0F1C2E; border: 1.5px solid #EEF2F8; }
+.btn-outline:hover { border-color: #D4500A; color: #D4500A; background: #FFF4EE; }
+
+.empty-state {
+  text-align: center; padding: 3rem 2rem;
+  color: #6B7280; font-size: 0.875rem;
+}
+.empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- BACK LINK -->
+<a href="{% url 'registra_dashboard' %}" class="back-link">← Back to Dashboard</a>
+
+<!-- COURSE HEADER CARD -->
+<div class="course-header-card">
+  <div class="course-header-left">
+    <div class="course-header-code">{{ course.code }}</div>
+    <div class="course-header-name">{{ course.name }}</div>
+    <div class="course-header-meta">
+      <span>📅 {{ course.semester.name }}</span>
+      <span>👥 {{ enrollments.count }} student{{ enrollments.count|pluralize }}</span>
+    </div>
+  </div>
+  <div class="course-header-right">
+    {% if course.level == 'master' %}
+      <span class="badge badge-master">Master</span>
+    {% elif course.level == 'phd' %}
+      <span class="badge badge-phd">PhD</span>
+    {% else %}
+      <span class="badge badge-bachelor">Bachelor</span>
+    {% endif %}
+    <span class="badge badge-decoded">✓ Decoded</span>
+  </div>
+</div>
+
+<!-- SUCCESS ALERT -->
+<div class="success-alert">
+  <span style="font-size:1.2rem;">✓</span>
+  <div>
+    <strong>Decoded Results Available</strong>
+    <p style="margin:0.25rem 0 0; font-size:0.8rem; color:#047857;">All student identities are now visible. Download the Excel file to export results in the standard format.</p>
+  </div>
+</div>
+
+<!-- RESULTS TABLE -->
+<div class="table-card">
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:25%;">Name</th>
+          <th style="width:15%;">Matricule</th>
+          <th style="width:20%;">Email</th>
+          <th style="width:10%;">CA/30</th>
+          <th style="width:10%;">Final/70</th>
+          <th style="width:10%;">Status</th>
+          <th style="width:10%;">Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enrollment in enrollments %}
+        <tr class="{% if enrollment.remarks == 'PASS' %}row-pass{% elif enrollment.remarks == 'FAIL' %}row-fail{% endif %}">
+          <td>
+            <span class="student-name-cell">{{ enrollment.student.full_name }}</span>
+          </td>
+          <td>
+            <span class="student-id-cell">{{ enrollment.student.matricule }}</span>
+          </td>
+          <td style="font-size:0.8rem;">
+            {% if enrollment.student.email %}
+              {{ enrollment.student.email }}
+            {% else %}
+              <span class="score-empty">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="score-cell">
+              {% if enrollment.grade.cc_score is not None %}
+                {{ enrollment.grade.cc_score }}
+              {% else %}
+                <span class="score-empty">—</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="score-cell">
+              {% if enrollment.grade.sn_score is not None %}
+                {{ enrollment.grade.sn_score }}
+              {% else %}
+                <span class="score-empty">—</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            {% if enrollment.remarks == 'PASS' %}
+              <span class="status-pass">✓ PASS</span>
+            {% elif enrollment.remarks == 'FAIL' %}
+              <span class="status-fail">✗ FAIL</span>
+            {% else %}
+              <span class="score-empty">N/A</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="score-cell">
+              {% if enrollment.grade.score is not None %}
+                {{ enrollment.grade.score }}
+              {% else %}
+                <span class="score-empty">—</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:2rem; color:#9CA3AF;">
+            <span style="font-size:2rem; display:block; margin-bottom:0.5rem;">📄</span>
+            No results available.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">
+    ⬇ Download Excel
+  </a>
+  <a href="{% url 'registra_dashboard' %}" class="btn btn-outline">
+    Back to Dashboard
+  </a>
+</div>
+
+{% endblock %}

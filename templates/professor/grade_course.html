@@ -1,0 +1,472 @@
+{% extends 'base.html' %}
+{% block title %}Grade — {{ course.code }}{% endblock %}
+{% block page_title %}{{ course.code }}: {{ course.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .grade-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        animation: fadeInUp 0.6s ease-out;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    .grade-page-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: var(--ict-navy);
+    }
+    .grade-page-subtitle {
+        color: #6B7280;
+        font-size: 0.95rem;
+    }
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--blue-deep);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        margin-bottom: 1rem;
+    }
+    .back-link:hover {
+        color: var(--ict-navy);
+        text-decoration: underline;
+    }
+    .course-meta {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6B7280;
+        font-size: 0.95rem;
+    }
+    .meta-item i {
+        color: var(--blue-deep);
+        font-size: 1.1rem;
+    }
+    .meta-badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .meta-badge-level-100 { background-color: #FEF3E2; color: #F59E0B; }
+    .meta-badge-level-200 { background-color: #DBEAFE; color: #0284C7; }
+    .meta-badge-level-300 { background-color: #D1FAE5; color: #059669; }
+    .meta-badge-level-400 { background-color: #FCE7F3; color: #DB2777; }
+    .status-submitted {
+        background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
+        color: #166534;
+        padding: 0.75rem 1.25rem;
+        border-radius: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.9rem;
+    }
+    .alert-instructions {
+        background: linear-gradient(135deg, #DBEAFE 0%, #BAE6FD 100%);
+        border: 2px solid #0284C7;
+        border-radius: 15px;
+        padding: 1.5rem;
+        color: #0c4a6e;
+        margin-bottom: 2.5rem;
+        animation: fadeInUp 0.6s ease-out 0.1s both;
+    }
+    .alert-instructions i {
+        color: #0284C7;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+    .alert-instructions strong {
+        color: #0c4a6e;
+        font-weight: 700;
+    }
+    .alert-instructions-content {
+        display: flex;
+        gap: 1rem;
+    }
+    .alert-instructions-text {
+        flex: 1;
+    }
+    .alert-instructions-formula {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #0284C7;
+        font-size: 0.9rem;
+    }
+    .grading-table-section {
+        animation: fadeInUp 0.6s ease-out 0.2s both;
+    }
+    .table-header {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--ict-navy);
+        margin-bottom: 1.5rem;
+    }
+    .grading-table {
+        background: white;
+        border: 2px solid #EEF2F8;
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(13, 46, 94, 0.08);
+        margin-bottom: 2rem;
+    }
+    .grading-table table {
+        margin-bottom: 0;
+        width: 100%;
+    }
+    .grading-table thead {
+        background: linear-gradient(135deg, var(--blue-deep) 0%, #1A4A8A 100%);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .grading-table th {
+        padding: 1.5rem;
+        font-weight: 700;
+        color: white;
+        border: none;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        text-align: left;
+    }
+    .grading-table th:nth-child(2),
+    .grading-table th:nth-child(3),
+    .grading-table th:nth-child(4) {
+        text-align: center;
+    }
+    .grading-table th small {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.85);
+        display: block;
+        margin-top: 0.4rem;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    .grading-table tbody tr {
+        border-bottom: 1px solid #EEF2F8;
+        transition: all 0.3s ease;
+    }
+    .grading-table tbody tr:nth-child(odd) {
+        background: #FAFBFC;
+    }
+    .grading-table tbody tr:last-child {
+        border-bottom: none;
+    }
+    .grading-table tbody tr:hover {
+        background: linear-gradient(90deg, #F0F7FF 0%, #FFFFFF 100%);
+        box-shadow: inset 4px 0 0 var(--blue-deep);
+    }
+    .grading-table td {
+        padding: 1.3rem 1.5rem;
+        vertical-align: middle;
+        border: none;
+        font-size: 0.95rem;
+    }
+    .grading-table td:nth-child(2),
+    .grading-table td:nth-child(3),
+    .grading-table td:nth-child(4) {
+        text-align: center;
+    }
+    .code-number {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        color: var(--blue-deep);
+        font-size: 0.95rem;
+        letter-spacing: 0.8px;
+        background: linear-gradient(135deg, #EEF2F8 0%, #E0EAFF 100%);
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        display: inline-block;
+    }
+    .grade-input {
+        width: 100%;
+        max-width: 140px;
+        padding: 0.8rem 1rem;
+        text-align: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 1rem;
+        border: 2px solid #E5E7EB;
+        border-radius: 10px;
+        background: white;
+        transition: all 0.3s ease;
+        color: var(--ict-navy);
+        display: inline-block;
+    }
+    .grade-input::placeholder {
+        color: #D1D5DB;
+        font-weight: 500;
+    }
+    .grade-input:hover {
+        border-color: #D1D5DB;
+        background: #FAFBFC;
+    }
+    .grade-input:focus {
+        border-color: var(--blue-deep);
+        box-shadow: 0 0 0 4px rgba(13, 46, 94, 0.12);
+        outline: none;
+        background: #FFFFFF;
+    }
+    .final-display {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 700;
+        color: var(--ict-navy);
+        font-size: 1rem;
+        padding: 0.6rem 1rem;
+        background: #EEF2F8;
+        border-radius: 8px;
+        display: inline-block;
+        min-width: 80px;
+    }
+    .final-display[style*="color: rgb(22, 163, 74)"],
+    .final-display[style*="color: #16a34a"],
+    .final-display[style*="#166534"] {
+        background: #DCFCE7;
+        color: #166534 !important;
+    }
+    .final-display[style*="color: rgb(155, 34, 38)"],
+    .final-display[style*="color: #9B2226"],
+    .final-display[style*="#C1121F"] {
+        background: #FEE2E2;
+        color: #991B1B !important;
+    }
+    .no-students {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #9CA3AF;
+    }
+    .no-students-icon {
+        font-size: 3rem;
+        opacity: 0.2;
+        margin-bottom: 1rem;
+    }
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 1.5rem 0;
+        animation: fadeInUp 0.6s ease-out 0.3s both;
+    }
+    .btn-save {
+        background: white;
+        color: var(--blue-deep);
+        border: 2px solid var(--blue-deep);
+        border-radius: 10px;
+        padding: 0.8rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        text-decoration: none;
+    }
+    .btn-save:hover {
+        background: var(--blue-deep);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(13, 46, 94, 0.2);
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0.8rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(5, 150, 105, 0.3);
+    }
+    .grading-hint {
+        color: #6B7280;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+        padding-left: 1rem;
+        border-left: 3px solid var(--blue-deep);
+    }
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'professor_dashboard' %}" class="back-link">
+    <i class="bi bi-arrow-left"></i>Back to My Courses
+</a>
+
+<div class="grade-page-header">
+    <div>
+        <div class="grade-page-title">{{ course.code }}</div>
+        <div class="grade-page-subtitle">{{ course.name }}</div>
+    </div>
+    <div class="course-meta">
+        <span class="meta-badge meta-badge-level-{{ course.level }}">{{ course.get_level_display }}</span>
+        <div class="meta-item">
+            <i class="bi bi-people"></i>
+            <span>{{ enrollments.count }} student{{ enrollments.count|pluralize }}</span>
+        </div>
+        {% if course.grades_submitted %}
+        <div class="status-submitted">
+            <i class="bi bi-check2-circle"></i>
+            <span>Grades Submitted</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if not course.grades_submitted %}
+<div class="alert-instructions">
+    <div class="alert-instructions-content">
+        <i class="bi bi-info-circle-fill"></i>
+        <div class="alert-instructions-text">
+            <strong>Grading Instructions</strong>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">You can only see anonymous codes assigned by the Registra. Enter CC (0–30) for continuous assessment and SN (0–70) for summative assessment. Save progress at any time, and submit when all grades are complete.</p>
+            <div class="alert-instructions-formula">
+                <strong>Formula:</strong> Final Grade = CC + SN (Maximum 100 points)
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<form method="post" id="gradeForm">
+    {% csrf_token %}
+    
+    {% if enrollments %}
+    <div class="grading-table-section">
+        <div class="table-header">Grade Entry</div>
+        <div class="grading-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Anonymous Code</th>
+                        <th>CC Score <small>(0–30)</small></th>
+                        <th>SN Score <small>(0–70)</small></th>
+                        <th>Final Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for enrollment in enrollments %}
+                    <tr id="row-{{ enrollment.id }}">
+                        <td><span class="code-number">{{ enrollment.anonymous_code }}</span></td>
+                        <td>
+                            {% if course.grades_submitted %}
+                            <span class="final-display">{{ enrollment.grade.cc_score|default:"—" }}</span>
+                            {% else %}
+                            <input type="number" name="cc_{{ enrollment.id }}"
+                                value="{{ enrollment.grade.cc_score|default:'' }}"
+                                class="form-control grade-input"
+                                min="0" max="30" step="0.25"
+                                placeholder="0–30"
+                                onchange="updateFinal('{{ enrollment.id }}')"
+                                oninput="updateFinal('{{ enrollment.id }}')">
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if course.grades_submitted %}
+                            <span class="final-display">{{ enrollment.grade.sn_score|default:"—" }}</span>
+                            {% else %}
+                            <input type="number" name="sn_{{ enrollment.id }}"
+                                value="{{ enrollment.grade.sn_score|default:'' }}"
+                                class="form-control grade-input"
+                                min="0" max="70" step="0.25"
+                                placeholder="0–70"
+                                onchange="updateFinal('{{ enrollment.id }}')"
+                                oninput="updateFinal('{{ enrollment.id }}')">
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="final-display" id="final-{{ enrollment.id }}">
+                                {% if enrollment.grade.final_score %}
+                                {{ enrollment.grade.final_score }}
+                                {% else %}—{% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if not course.grades_submitted %}
+    <div class="action-buttons">
+        <button type="submit" name="save_draft" class="btn-save">
+            <i class="bi bi-floppy"></i>Save Progress
+        </button>
+        <button type="submit" name="submit_final" class="btn-submit"
+            onclick="return confirm('Are you sure you want to submit grades to the Registra? This action cannot be undone.')">
+            <i class="bi bi-send"></i>Submit to Registra
+        </button>
+        <div class="grading-hint">
+            💡 Tip: CC (0–30) + SN (0–70) = Final (0–100)
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="grading-table">
+        <div class="no-students">
+            <div class="no-students-icon">📚</div>
+            <p style="font-size: 1.1rem; font-weight: 600; color: var(--ict-navy); margin-bottom: 0.5rem;">No Students Enrolled</p>
+            <p>There are no students enrolled in this course yet.</p>
+        </div>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateFinal(enrollmentId) {
+    const cc = parseFloat(document.querySelector(`[name="cc_${enrollmentId}"]`)?.value) || null;
+    const sn = parseFloat(document.querySelector(`[name="sn_${enrollmentId}"]`)?.value) || null;
+    const finalEl = document.getElementById(`final-${enrollmentId}`);
+    if (cc !== null && sn !== null && !isNaN(cc) && !isNaN(sn)) {
+        const final = (cc + sn).toFixed(2);
+        finalEl.textContent = final;
+        finalEl.style.color = parseFloat(final) >= 50 ? '#166534' : '#9B2226';
+    } else {
+        finalEl.textContent = '—';
+        finalEl.style.color = '';
+    }
+}
+</script>
+{% endblock %}

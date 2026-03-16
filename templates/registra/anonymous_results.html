@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Anonymous Results — {{ course.code }}{% endblock %}
+{% block page_title %}{{ course.code }}: {{ course.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .code-number { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--ict-navy); }
+    .score-display { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: center; }
+    .dash { color: #999; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a href="{% url 'registra_dashboard' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    <span class="badge badge-level-{{ course.level }} px-3 py-2">{{ course.get_level_display }}</span>
+    <span class="text-muted small d-flex align-items-center"><i class="bi bi-people me-1"></i>{{ enrollments.count }} students</span>
+</div>
+
+<div class="alert alert-info d-flex align-items-start mb-4" style="font-size:0.875rem;">
+    <i class="bi bi-info-circle-fill me-2 mt-1"></i>
+    <div>
+        <strong>Anonymous Results:</strong> The grades below are shown with student anonymization codes. Student names and matricule numbers are hidden. Click the "Decode Results" button below to reveal student identities.
+    </div>
+</div>
+
+<div class="ict-table mb-4">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th style="width:80px;">Code</th>
+                <th style="width:100px;">Attendance/10</th>
+                <th style="width:100px;">Assignment/20</th>
+                <th style="width:100px;">CA/30</th>
+                <th style="width:100px;">Final/70</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for enrollment in enrollments %}
+            <tr>
+                <td><span class="code-number">{{ enrollment.anonymous_code }}</span></td>
+                <td class="score-display dash">—</td>
+                <td class="score-display dash">—</td>
+                <td class="score-display">
+                    {% if enrollment.grade.cc_score is not None %}
+                    {{ enrollment.grade.cc_score }}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="score-display">
+                    {% if enrollment.grade.sn_score is not None %}
+                    {{ enrollment.grade.sn_score }}
+                    {% else %}—{% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No grades submitted yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<form method="post" action="{% url 'registra_decode_results' course.id %}">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger px-5 py-2" onclick="return confirm('Decode results? This will reveal student identities. This cannot be undone.')">
+        <i class="bi bi-unlock me-2"></i>🔓 Decode Results
+    </button>
+</form>
+{% endblock %}
