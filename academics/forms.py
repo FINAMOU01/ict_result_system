@@ -34,6 +34,13 @@ class ImportFileForm(forms.Form):
             raise forms.ValidationError("File size must be under 10MB.")
         return file
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['semester'].empty_label = "Select academic semester"
+        self.fields['semester'].label_from_instance = (
+            lambda s: f"{s.name} ({s.academic_year})"
+        )
+
 
 class AssignProfessorForm(forms.ModelForm):
     class Meta:

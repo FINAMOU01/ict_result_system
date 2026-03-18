@@ -204,11 +204,12 @@
   <div class="action-bar-btns">
     {% if not course.is_coded %}
       <a href="{% url 'add_walkin_student' course.id %}" class="btn btn-success">+ Add Walk-in Student</a>
+      <a href="{% url 'add_from_admissions' course.id %}" class="btn btn-outline">+ Add From Admissions</a>
       <a href="{% url 'generate_codes' course.id %}" class="btn btn-orange">🔀 Generate Codes</a>
     {% else %}
       <a href="{% url 'download_coding_sheet' course.id %}" class="btn btn-primary">⬇ Download Confidential Sheet</a>
       {% if course.grades_submitted %}
-        <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇ Download Results</a>
+        <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇ Download CSV Results</a>
       {% endif %}
     {% endif %}
   </div>

@@ -285,7 +285,7 @@
                   <a href="{% url 'registra_anonymous_results' course.id %}" class="btn btn-primary">Anon</a>
                 {% elif course.is_decoded %}
                   <a href="{% url 'registra_decoded_results' course.id %}" class="btn btn-success">Decoded</a>
-                  <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇</a>
+                  <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇ CSV</a>
                 {% endif %}
               </div>
             </td>
