@@ -1,4 +1,5 @@
 import io
+import csv
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -173,3 +174,38 @@ def generate_coding_sheet(course):
     wb.save(buffer)
     buffer.seek(0)
     return buffer
+
+
+def generate_results_csv(course):
+    """Generate decoded results as CSV bytes."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow([
+        'Name', 'ID Number', 'First Name', 'Last Name', 'Email Address',
+        'Attendance/10', 'Assignment/20', 'CA/30', 'Final/70', 'Course Name', 'Semester'
+    ])
+
+    enrollments = course.enrollments.select_related('student', 'grade').order_by('student__last_name', 'student__first_name')
+    for enrollment in enrollments:
+        grade = getattr(enrollment, 'grade', None)
+        ca = float(grade.cc_score) if grade and grade.cc_score is not None else ''
+        final_sn = float(grade.sn_score) if grade and grade.sn_score is not None else ''
+        student_name = enrollment.student.full_name()
+        if enrollment.student.is_walkin:
+            student_name = f"{student_name} (Walk-in)"
+
+        writer.writerow([
+            student_name,
+            enrollment.student.matricule,
+            enrollment.student.first_name,
+            enrollment.student.last_name,
+            enrollment.student.email if enrollment.student.email else '',
+            '',
+            '',
+            ca,
+            final_sn,
+            f"{course.code} {course.name}",
+            course.semester.name,
+        ])
+
+    return io.BytesIO(buffer.getvalue().encode('utf-8-sig'))

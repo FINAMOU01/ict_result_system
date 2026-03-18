@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Admissions Registry{% endblock %}
+{% block page_title %}Admissions Registry{% endblock %}
+
+{% block content %}
+<div class="card" style="padding:1.25rem;margin-bottom:1rem;">
+  <form method="get" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+    <div style="flex:1;min-width:220px;">
+      <label style="display:block;font-size:0.75rem;color:#6B7280;margin-bottom:0.35rem;">Search</label>
+      <input type="text" name="q" value="{{ query }}" placeholder="Matricule or name" style="width:100%;padding:0.65rem;border:1px solid #d1d5db;border-radius:8px;">
+    </div>
+    <div style="min-width:220px;">
+      <label style="display:block;font-size:0.75rem;color:#6B7280;margin-bottom:0.35rem;">Academic Year</label>
+      <select name="admitted_year" style="width:100%;padding:0.65rem;border:1px solid #d1d5db;border-radius:8px;">
+        <option value="">All</option>
+        {% for year in admitted_year_choices %}
+        <option value="{{ year }}" {% if selected_admitted_year == year %}selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Filter</button>
+    {% if query or selected_admitted_year %}
+    {% if request.user.role == 'admin' %}
+    <a href="{% url 'admissions_registry_admin' %}" class="btn btn-outline">Clear</a>
+    {% else %}
+    <a href="{% url 'admissions_registry_registra' %}" class="btn btn-outline">Clear</a>
+    {% endif %}
+    {% endif %}
+  </form>
+</div>
+
+<div class="card" style="overflow-x:auto;">
+  <table class="data-table" style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Matricule</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">First Name</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Last Name</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Email</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Level</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Academic Year</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in students %}
+      <tr>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.matricule }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.first_name }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.last_name }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.email }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.get_level_display }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.admitted_year }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="padding:1rem;text-align:center;color:#6B7280;">No admitted students found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

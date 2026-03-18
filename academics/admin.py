@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import Semester, Course, Student, Enrollment, ImportLog
+from .models import Semester, Course, Student, Enrollment, ImportLog, AdmittedStudent
+
+@admin.register(AdmittedStudent)
+class AdmittedStudentAdmin(admin.ModelAdmin):
+    list_display = ['matricule', 'last_name', 'first_name', 'email', 'level', 'admitted_year', 'created_at']
+    list_filter = ['level', 'admitted_year']
+    search_fields = ['matricule', 'last_name', 'first_name', 'email']
+    readonly_fields = ['created_at']
 
 
 @admin.register(Semester)

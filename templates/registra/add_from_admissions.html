@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Add From Admissions — {{ course.code }}{% endblock %}
+{% block content %}
+
+<a href="{% url 'registra_course_detail' course.id %}" class="back-link" style="display:inline-block;margin-bottom:1rem;color:#1A4A8A;text-decoration:none;">← Back to Course</a>
+
+<div class="card" style="padding:1.5rem;margin-bottom:1rem;">
+  <h3 style="margin-bottom:0.75rem;">Add Student From Admissions</h3>
+  <p style="color:#6B7280;margin-bottom:1rem;">Search admitted students and add them to this course using matricule.</p>
+
+  <form method="get" style="display:flex;gap:0.75rem;margin-bottom:1rem;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search by matricule or name" style="flex:1;padding:0.65rem;border:1px solid #d1d5db;border-radius:8px;">
+    <button type="submit" class="btn btn-outline">Search</button>
+    {% if query %}<a href="{% url 'add_from_admissions' course.id %}" class="btn btn-outline">Clear</a>{% endif %}
+  </form>
+</div>
+
+<div class="card" style="overflow-x:auto;">
+  <table class="data-table" style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Matricule</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">First Name</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Last Name</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Level</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Admission Year</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for student in admitted_students %}
+      <tr>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ student.matricule }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ student.first_name }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ student.last_name }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ student.get_level_display }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ student.admitted_year }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="matricule" value="{{ student.matricule }}">
+            <button type="submit" class="btn btn-primary" style="padding:0.35rem 0.75rem;">Add</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="padding:1rem;text-align:center;color:#6B7280;">No admitted students found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

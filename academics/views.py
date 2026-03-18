@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
-from .models import Semester, Course, Student, Enrollment, ImportLog
+from .models import Semester, Course, Student, Enrollment, ImportLog, AdmittedStudent
 from .forms import SemesterForm, ImportFileForm, AssignProfessorForm
 from .utils import import_enrollment_file
 from accounts.models import CustomUser
@@ -155,6 +155,32 @@ def student_list(request):
         'students': students.order_by('last_name'),
         'query': query,
         'level_filter': level_filter,
+    })
+
+
+@login_required
+@role_required(['admin', 'registra'])
+def admissions_registry(request):
+    query = request.GET.get('q', '').strip()
+    admitted_year = request.GET.get('admitted_year', '').strip()
+
+    students = AdmittedStudent.objects.all()
+    if query:
+        students = students.filter(
+            Q(matricule__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(first_name__icontains=query)
+        )
+    if admitted_year:
+        students = students.filter(admitted_year=admitted_year)
+
+    admitted_year_choices = [choice[0] for choice in AdmittedStudent.ADMITTED_YEAR_CHOICES]
+
+    return render(request, 'admissions/registry.html', {
+        'students': students.order_by('admitted_year', 'last_name', 'first_name'),
+        'query': query,
+        'selected_admitted_year': admitted_year,
+        'admitted_year_choices': admitted_year_choices,
     })
 
 
@@ -316,6 +342,74 @@ def add_walkin_student(request, course_id):
 
 @login_required
 @role_required(['registra'])
+def add_from_admissions(request, course_id):
+    """Add a student from admitted students list to a course."""
+    course = get_object_or_404(Course, id=course_id)
+
+    if course.is_coded:
+        messages.error(request, "Cannot add students after coding has started.")
+        return redirect('registra_course_detail', course_id=course_id)
+
+    if request.method == 'POST':
+        matricule = request.POST.get('matricule', '').strip()
+
+        if not matricule:
+            messages.error(request, "Please enter a matricule number.")
+            return redirect('add_from_admissions', course_id=course_id)
+
+        try:
+            admitted_student = AdmittedStudent.objects.get(matricule=matricule)
+        except AdmittedStudent.DoesNotExist:
+            messages.error(request, f"No admitted student found with matricule '{matricule}'.")
+            return redirect('add_from_admissions', course_id=course_id)
+
+        enrollment_exists = Enrollment.objects.filter(
+            student__matricule=matricule,
+            course=course,
+            semester=course.semester
+        ).exists()
+        if enrollment_exists:
+            messages.error(request, f"This student ({matricule}) is already enrolled in this course.")
+            return redirect('add_from_admissions', course_id=course_id)
+
+        student, _ = Student.objects.get_or_create(
+            matricule=matricule,
+            defaults={
+                'first_name': admitted_student.first_name,
+                'last_name': admitted_student.last_name,
+                'email': admitted_student.email,
+                'level': admitted_student.level,
+                'is_walkin': False,
+            }
+        )
+
+        Enrollment.objects.create(
+            student=student,
+            course=course,
+            semester=course.semester
+        )
+
+        messages.success(request, f"{student.full_name()} ({student.matricule}) added to {course.code}.")
+        return redirect('registra_course_detail', course_id=course_id)
+
+    admitted_query = request.GET.get('q', '').strip()
+    admitted_students = AdmittedStudent.objects.all()
+    if admitted_query:
+        admitted_students = admitted_students.filter(
+            Q(matricule__icontains=admitted_query) |
+            Q(last_name__icontains=admitted_query) |
+            Q(first_name__icontains=admitted_query)
+        )
+
+    return render(request, 'registra/add_from_admissions.html', {
+        'course': course,
+        'admitted_students': admitted_students[:80],
+        'query': admitted_query,
+    })
+
+
+@login_required
+@role_required(['registra'])
 def generate_codes(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     if course.is_coded:
@@ -385,14 +479,14 @@ def download_decoded_results(request, course_id):
     if not course.grades_submitted:
         messages.error(request, "Professor has not submitted grades yet.")
         return redirect('registra_dashboard')
-    from results.utils import generate_results_excel
+    from results.utils import generate_results_csv
     from django.http import HttpResponse
-    buffer = generate_results_excel(course)
+    buffer = generate_results_csv(course)
     response = HttpResponse(
         buffer.getvalue(),
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        content_type='text/csv; charset=utf-8'
     )
-    response['Content-Disposition'] = f'attachment; filename="{course.code}_results_{course.semester.name}.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="{course.code}_results_{course.semester.name}.csv"'
     return response
 
 

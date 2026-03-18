@@ -1078,6 +1078,10 @@
             <div class="nav-icon">👥</div>
             <div class="nav-text">Students</div>
         </a>
+        <a href="{% url 'admissions_registry_admin' %}" class="nav-item {% if request.resolver_match.url_name == 'admissions_registry_admin' %}active{% endif %}">
+            <div class="nav-icon">🗂️</div>
+            <div class="nav-text">Admissions</div>
+        </a>
         <a href="{% url 'import_file' %}" class="nav-item {% if request.resolver_match.url_name == 'import_file' %}active{% endif %}">
             <div class="nav-icon">📤</div>
             <div class="nav-text">Import</div>
@@ -1099,6 +1103,10 @@
         <a href="{% url 'registra_semester_history' %}" class="nav-item {% if request.resolver_match.url_name == 'registra_semester_history' %}active{% endif %}">
             <div class="nav-icon">🕐</div>
             <div class="nav-text">Semester History</div>
+        </a>
+        <a href="{% url 'admissions_registry_registra' %}" class="nav-item {% if request.resolver_match.url_name == 'admissions_registry_registra' %}active{% endif %}">
+            <div class="nav-icon">🗂️</div>
+            <div class="nav-text">Admissions</div>
         </a>
     </div>
 

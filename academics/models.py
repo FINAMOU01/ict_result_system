@@ -12,7 +12,7 @@ class Semester(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.academic_year})"
 
     def save(self, *args, **kwargs):
         if self.is_active:
@@ -112,3 +112,55 @@ class ImportLog(models.Model):
 
     def __str__(self):
         return f"Import {self.file_name} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class AdmittedStudent(models.Model):
+    LEVEL_CHOICES = [
+        ('bachelor', 'Bachelor'),
+        ('master', 'Master'),
+        ('phd', 'PhD'),
+    ]
+    ADMITTED_YEAR_CHOICES = [
+        ('Fall 2020', 'Fall 2020'),
+        ('Spring 2020', 'Spring 2020'),
+        ('Summer 2020', 'Summer 2020'),
+        ('Fall 2021', 'Fall 2021'),
+        ('Spring 2021', 'Spring 2021'),
+        ('Summer 2021', 'Summer 2021'),
+        ('Fall 2022', 'Fall 2022'),
+        ('Spring 2022', 'Spring 2022'),
+        ('Summer 2022', 'Summer 2022'),
+        ('Fall 2023', 'Fall 2023'),
+        ('Spring 2023', 'Spring 2023'),
+        ('Summer 2023', 'Summer 2023'),
+        ('Fall 2024', 'Fall 2024'),
+        ('Spring 2024', 'Spring 2024'),
+        ('Summer 2024', 'Summer 2024'),
+        ('Fall 2025', 'Fall 2025'),
+        ('Spring 2025', 'Spring 2025'),
+        ('Summer 2025', 'Summer 2025'),
+        ('Fall 2026', 'Fall 2026'),
+        ('Spring 2026', 'Spring 2026'),
+        ('Summer 2026', 'Summer 2026'),
+    ]
+    
+    matricule = models.CharField(max_length=50, unique=True)
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=254, unique=True)
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='bachelor')
+    admitted_year = models.CharField(max_length=20, choices=ADMITTED_YEAR_CHOICES, default='Fall 2026')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-admitted_year', 'last_name', 'first_name']
+        indexes = [
+            models.Index(fields=['matricule']),
+            models.Index(fields=['admitted_year']),
+        ]
+
+    def __str__(self):
+        return f"{self.matricule} - {self.last_name} {self.first_name} ({self.admitted_year})"
+
+    def full_name(self):
+        return f"{self.last_name} {self.first_name}"

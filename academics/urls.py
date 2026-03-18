@@ -10,10 +10,13 @@ urlpatterns = [
     path('admin-panel/courses/', views.course_list, name='course_list'),
     path('admin-panel/courses/<int:course_id>/assign/', views.assign_professor, name='assign_professor'),
     path('admin-panel/students/', views.student_list, name='student_list'),
+    path('admin-panel/admissions/', views.admissions_registry, name='admissions_registry_admin'),
     # Registra
     path('registra/', views.registra_dashboard, name='registra_dashboard'),
     path('registra/semester-history/', views.registra_semester_history, name='registra_semester_history'),
+    path('registra/admissions/', views.admissions_registry, name='admissions_registry_registra'),
     path('registra/course/<int:course_id>/', views.registra_course_detail, name='registra_course_detail'),
+    path('registra/course/<int:course_id>/add-from-admissions/', views.add_from_admissions, name='add_from_admissions'),
     path('registra/course/<int:course_id>/add-walkin/', views.add_walkin_student, name='add_walkin_student'),
     path('registra/course/<int:course_id>/code/', views.generate_codes, name='generate_codes'),
     path('registra/course/<int:course_id>/coding-sheet/', views.download_coding_sheet, name='download_coding_sheet'),
