@@ -1138,27 +1138,11 @@
             <div class="semester-dot"></div>
             <div class="semester-text">{{ active_semester.name }}</div>
         </div>
-        {% else %}
-        <div class="semester-pill">
-            <div class="semester-dot"></div>
-            <div class="semester-text">No Active Semester</div>
-        </div>
         {% endif %}
         <div class="topbar-avatar">
             {{ request.user.first_name|slice:":1" }}{{ request.user.last_name|slice:":1" }}
         </div>
     </div>
-
-    <!-- MESSAGES -->
-    {% if messages %}
-    <div style="position: fixed; top: 1rem; right: 1rem; z-index: 9999; max-width: 450px;">
-        {% for message in messages %}
-        <div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-            {{ message }}
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
 
     <div class="page-body">
         {% block content %}{% endblock %}

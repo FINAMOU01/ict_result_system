@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+from collections import defaultdict
 from django.db import transaction
 from .models import Student, Course, Enrollment, Semester, ImportLog
 
@@ -75,6 +76,187 @@ def normalize_columns(df):
     return df
 
 
+def _validated_dataframe(file_obj):
+    """Parse and validate the uploaded file columns."""
+    df = parse_upload(file_obj)
+    df = normalize_columns(df)
+
+    required = ['matricule', 'first_name', 'last_name', 'course_name']
+    missing = [r for r in required if r not in df.columns]
+    if missing:
+        raise ValueError(f"Missing columns: {', '.join(missing)}. Found: {', '.join(df.columns.tolist())}")
+
+    df = df.dropna(subset=['matricule', 'course_name'])
+    return df
+
+
+def _extract_row_record(row, row_num, has_email):
+    """Normalize a dataframe row into a structured import record."""
+    matricule = str(row['matricule']).strip()
+    first_name = str(row['first_name']).strip().title()
+    last_name = str(row['last_name']).strip().upper()
+    course_full_str = str(row['course_name']).strip()
+    email = str(row['email']).strip() if has_email else ''
+
+    if ' ' in course_full_str:
+        course_code, course_name = course_full_str.split(' ', 1)
+    else:
+        course_code = course_full_str
+        course_name = course_full_str
+
+    code_parts = course_code.split('-')
+    level_code = None
+    if len(code_parts) >= 2:
+        level_idx = 2 if code_parts[0].upper() == 'FR' else 1
+        if len(code_parts) > level_idx:
+            level_code = code_parts[level_idx]
+
+    level = map_level_code(level_code) if level_code else 'bachelor'
+
+    return {
+        'row_num': int(row_num),
+        'matricule': matricule,
+        'first_name': first_name,
+        'last_name': last_name,
+        'email': email,
+        'course_code': course_code,
+        'course_name': course_name,
+        'level': level,
+    }
+
+
+def build_import_preview(file_obj):
+    """Build preview data without writing to database."""
+    df = _validated_dataframe(file_obj)
+    has_email = 'email' in df.columns
+
+    records = []
+    errors = []
+    course_summary = defaultdict(lambda: {'students': set(), 'count': 0, 'level': 'bachelor'})
+    course_details = defaultdict(lambda: {'level': 'bachelor', 'rows': []})
+
+    for idx, row in df.iterrows():
+        row_num = int(idx) + 2
+        try:
+            record = _extract_row_record(row, row_num, has_email)
+            records.append(record)
+
+            key = (record['course_code'], record['course_name'])
+            course_summary[key]['count'] += 1
+            course_summary[key]['students'].add(record['matricule'])
+            course_summary[key]['level'] = record['level']
+            course_details[key]['level'] = record['level']
+            if len(course_details[key]['rows']) < 120:
+                course_details[key]['rows'].append({
+                    'row_num': record['row_num'],
+                    'matricule': record['matricule'],
+                    'first_name': record['first_name'],
+                    'last_name': record['last_name'],
+                    'email': record['email'],
+                })
+        except Exception as e:
+            errors.append(f"Row {row_num}: {str(e)}")
+
+    summary_rows = []
+    for (course_code, course_name), info in course_summary.items():
+        summary_rows.append({
+            'course_code': course_code,
+            'course_name': course_name,
+            'level': info['level'],
+            'row_count': info['count'],
+            'student_count': len(info['students']),
+        })
+
+    summary_rows.sort(key=lambda x: (x['course_code'], x['course_name']))
+
+    detail_rows = []
+    for (course_code, course_name), info in course_details.items():
+        total_rows = course_summary[(course_code, course_name)]['count']
+        total_students = len(course_summary[(course_code, course_name)]['students'])
+        detail_rows.append({
+            'course_code': course_code,
+            'course_name': course_name,
+            'level': info['level'],
+            'total_rows': total_rows,
+            'student_count': total_students,
+            'rows': info['rows'],
+            'rows_shown': len(info['rows']),
+            'has_more': total_rows > len(info['rows']),
+        })
+    detail_rows.sort(key=lambda x: (x['course_code'], x['course_name']))
+
+    return {
+        'file_name': file_obj.name,
+        'records': records,
+        'preview_rows': records[:200],
+        'course_summary': summary_rows,
+        'course_details': detail_rows,
+        'total_rows': len(records),
+        'total_courses': len(summary_rows),
+        'errors': errors,
+    }
+
+
+@transaction.atomic
+def import_enrollment_records(records, semester_id, user, file_name):
+    """Persist validated preview records into the database."""
+    try:
+        semester = Semester.objects.get(id=semester_id)
+    except Semester.DoesNotExist:
+        raise ValueError("Selected semester does not exist.")
+
+    errors = []
+    students_created = 0
+    courses_created = 0
+    enrollments_created = 0
+
+    for record in records:
+        try:
+            student, s_created = Student.objects.get_or_create(
+                matricule=record['matricule'],
+                defaults={
+                    'first_name': record['first_name'],
+                    'last_name': record['last_name'],
+                    'level': record['level'],
+                    'email': record['email'],
+                }
+            )
+            if s_created:
+                students_created += 1
+
+            course, c_created = Course.objects.get_or_create(
+                code=record['course_code'],
+                semester=semester,
+                defaults={
+                    'name': record['course_name'],
+                    'level': record['level'],
+                }
+            )
+            if c_created:
+                courses_created += 1
+
+            _, e_created = Enrollment.objects.get_or_create(
+                student=student,
+                course=course,
+                semester=semester,
+            )
+            if e_created:
+                enrollments_created += 1
+        except Exception as e:
+            errors.append(f"Row {record.get('row_num', '?')}: {str(e)}")
+
+    log = ImportLog.objects.create(
+        file_name=file_name,
+        semester=semester,
+        imported_by=user,
+        students_created=students_created,
+        courses_created=courses_created,
+        enrollments_created=enrollments_created,
+        errors='\n'.join(errors) if errors else '',
+    )
+    return log
+
+
 @transaction.atomic
 def import_enrollment_file(file_obj, semester_id, user):
     """
@@ -83,105 +265,10 @@ def import_enrollment_file(file_obj, semester_id, user):
     
     Returns ImportLog instance.
     """
-    errors = []
-    students_created = 0
-    courses_created = 0
-    enrollments_created = 0
-
-    try:
-        semester = Semester.objects.get(id=semester_id)
-    except Semester.DoesNotExist:
-        raise ValueError("Selected semester does not exist.")
-
-    df = parse_upload(file_obj)
-    df = normalize_columns(df)
-
-    # Validate required columns
-    required = ['matricule', 'first_name', 'last_name', 'course_name']
-    missing = [r for r in required if r not in df.columns]
-    if missing:
-        raise ValueError(f"Missing columns: {', '.join(missing)}. Found: {', '.join(df.columns.tolist())}")
-
-    df = df.dropna(subset=['matricule', 'course_name'])
-
-    for idx, row in df.iterrows():
-        row_num = idx + 2  # 1-indexed + header
-        try:
-            matricule = str(row['matricule']).strip()
-            first_name = str(row['first_name']).strip().title()
-            last_name = str(row['last_name']).strip().upper()
-            course_full_str = str(row['course_name']).strip()
-            email = str(row['email']).strip() if 'email' in df.columns else ''
-
-            # Split course string on first space: code | name
-            # Example: "FA25-MSC-ICT7114 IT Strategic Planning and Management"
-            # becomes: code="FA25-MSC-ICT7114", name="IT Strategic Planning and Management"
-            # French example: "FR-FA25-MSC-ICT7114 IT Strategic Planning and Management"
-            # becomes: code="FR-FA25-MSC-ICT7114", name="IT Strategic Planning and Management"
-            if ' ' in course_full_str:
-                course_code, course_name = course_full_str.split(' ', 1)
-            else:
-                course_code = course_full_str
-                course_name = course_full_str
-            
-            # Extract level code from course code (handles both FR- and non-FR- prefixed codes)
-            # Example: "FA25-MSC-ICT7114" → extract "MSC" at index [1]
-            # French example: "FR-FA25-MSC-ICT7114" → extract "MSC" at index [2]
-            code_parts = course_code.split('-')
-            level_code = None
-            if len(code_parts) >= 2:
-                # If first part is 'FR', level code is at index 2, else at index 1
-                level_idx = 2 if code_parts[0].upper() == 'FR' else 1
-                if len(code_parts) > level_idx:
-                    level_code = code_parts[level_idx]
-            
-            level = map_level_code(level_code) if level_code else 'bachelor'
-
-            # Get or create student
-            student, s_created = Student.objects.get_or_create(
-                matricule=matricule,
-                defaults={
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'level': level,
-                    'email': email
-                }
-            )
-            if s_created:
-                students_created += 1
-
-            # Get or create course
-            # Store full course code (e.g. FA25-MSC-ICT7114) and full name separately
-            course, c_created = Course.objects.get_or_create(
-                code=course_code,
-                semester=semester,
-                defaults={
-                    'name': course_name,
-                    'level': level
-                }
-            )
-            if c_created:
-                courses_created += 1
-
-            # Get or create enrollment
-            enrollment, e_created = Enrollment.objects.get_or_create(
-                student=student,
-                course=course,
-                semester=semester
-            )
-            if e_created:
-                enrollments_created += 1
-
-        except Exception as e:
-            errors.append(f"Row {row_num}: {str(e)}")
-
-    log = ImportLog.objects.create(
-        file_name=file_obj.name,
-        semester=semester,
-        imported_by=user,
-        students_created=students_created,
-        courses_created=courses_created,
-        enrollments_created=enrollments_created,
-        errors='\n'.join(errors) if errors else ''
+    preview = build_import_preview(file_obj)
+    return import_enrollment_records(
+        preview['records'],
+        semester_id,
+        user,
+        preview['file_name'],
     )
-    return log

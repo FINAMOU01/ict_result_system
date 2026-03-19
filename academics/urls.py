@@ -5,9 +5,12 @@ urlpatterns = [
     path('', views.dashboard_redirect, name='dashboard'),
     # Admin
     path('admin-panel/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin-panel/activity-log/', views.activity_log, name='activity_log'),
     path('admin-panel/semesters/', views.semester_list, name='semester_list'),
+    path('admin-panel/semesters/<int:semester_id>/edit/', views.semester_edit, name='semester_edit'),
     path('admin-panel/import/', views.import_file, name='import_file'),
     path('admin-panel/courses/', views.course_list, name='course_list'),
+    path('admin-panel/courses/<int:course_id>/students/', views.admin_course_students, name='admin_course_students'),
     path('admin-panel/courses/<int:course_id>/assign/', views.assign_professor, name='assign_professor'),
     path('admin-panel/students/', views.student_list, name='student_list'),
     path('admin-panel/admissions/', views.admissions_registry, name='admissions_registry_admin'),

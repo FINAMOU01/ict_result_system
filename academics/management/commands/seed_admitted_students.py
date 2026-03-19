@@ -1,72 +1,76 @@
 from django.core.management.base import BaseCommand
 from academics.models import AdmittedStudent
-import re
 
 
 class Command(BaseCommand):
-    help = 'Seed 100 admitted Cameroonian students across different admission years and levels'
+    help = 'Seed admitted students with hardcoded ICTU data provided by registrar/admin'
+
+    def _normalize_matricule(self, matricule):
+        raw = str(matricule).strip().upper()
+        if raw.startswith('ICTU'):
+            return raw
+        return f'ICTU{raw}'
+
+    def _normalize_level(self, level):
+        value = str(level).strip().lower()
+        if value == 'master':
+            return 'master'
+        if value == 'phd':
+            return 'phd'
+        return 'bachelor'
 
     def handle(self, *args, **options):
-        # Cameroonian first names and last names
-        first_names = [
-            'Jean', 'Marie', 'Paul', 'Pierre', 'Philippe', 'Michel', 'Andre', 'Claude', 'Marc', 'Luc',
-            'Francois', 'Bernard', 'Daniel', 'Thomas', 'Christian', 'David', 'Guy', 'Joseph', 'Jacques', 'Charles',
-            'Sophie', 'Anne', 'Francine', 'Nicole', 'Martine', 'Catherine', 'Danielle', 'Sandrine', 'Sylvie', 'Veronique',
-            'Diane', 'Florence', 'Monique', 'Chantal', 'Sylvain', 'Fabienne', 'Christine', 'Pascale', 'Fernande', 'Helene',
+        # Hardcoded admitted students shared by the user
+        rows = [
+            ('2020090', 'Francine', 'Araba', 'francine.araba.2020090@ictuniversity.cm', 'PhD', 'Spring 2025'),
+            ('2020084', 'Guy', 'Bonabebe', 'guy.bonabebe.2020084@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020087', 'Charles', 'Fobissi', 'charles.fobissi.2020087@ictuniversity.cm', 'Master', 'Spring 2025'),
+            ('2020089', 'Anne', 'Kamkum', 'anne.kamkum.2020089@ictuniversity.cm', 'Master', 'Spring 2025'),
+            ('2020079', 'Bernard', 'Kumput', 'bernard.kumput.2020079@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020081', 'Thomas', 'Moteng', 'thomas.moteng.2020081@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020086', 'Jacques', 'Ndola', 'jacques.ndola.2020086@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020082', 'Christian', 'Ngong', 'christian.ngong.2020082@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020088', 'Sophie', 'Njeumeni', 'sophie.njeumeni.2020088@ictuniversity.cm', 'Master', 'Spring 2025'),
+            ('2020080', 'Daniel', 'Njiokah', 'daniel.njiokah.2020080@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020085', 'Joseph', 'Tagne', 'joseph.tagne.2020085@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020083', 'David', 'Zam', 'david.zam.2020083@ictuniversity.cm', 'Bachelor', 'Spring 2025'),
+            ('2020028', 'Guy', 'Bonabebe', 'guy.bonabebe.2020028@ictuniversity.cm', 'Master', 'Summer 2021'),
+            ('2020023', 'Bernard', 'Kumput', 'bernard.kumput.2020023@ictuniversity.cm', 'Bachelor', 'Summer 2021'),
+            ('2020025', 'Thomas', 'Moteng', 'thomas.moteng.2020025@ictuniversity.cm', 'Bachelor', 'Summer 2021'),
+            ('2020030', 'Jacques', 'Ndola', 'jacques.ndola.2020030@ictuniversity.cm', 'PhD', 'Summer 2021'),
+            ('2020026', 'Christian', 'Ngong', 'christian.ngong.2020026@ictuniversity.cm', 'Bachelor', 'Summer 2021'),
+            ('2020024', 'Daniel', 'Njiokah', 'daniel.njiokah.2020024@ictuniversity.cm', 'Bachelor', 'Summer 2021'),
+            ('2020029', 'Joseph', 'Tagne', 'joseph.tagne.2020029@ictuniversity.cm', 'Master', 'Summer 2021'),
+            ('2020027', 'David', 'Zam', 'david.zam.2020027@ictuniversity.cm', 'Bachelor', 'Summer 2021'),
+            ('2020062', 'Guy', 'Bonabebe', 'guy.bonabebe.2020062@ictuniversity.cm', 'Master', 'Summer 2023'),
+            ('2020057', 'Bernard', 'Kumput', 'bernard.kumput.2020057@ictuniversity.cm', 'Bachelor', 'Summer 2023'),
+            ('2020059', 'Thomas', 'Moteng', 'thomas.moteng.2020059@ictuniversity.cm', 'Bachelor', 'Summer 2023'),
+            ('2020064', 'Jacques', 'Ndola', 'jacques.ndola.2020064@ictuniversity.cm', 'Master', 'Summer 2023'),
+            ('2020060', 'Christian', 'Ngong', 'christian.ngong.2020060@ictuniversity.cm', 'Bachelor', 'Summer 2023'),
+            ('2020058', 'Daniel', 'Njiokah', 'daniel.njiokah.2020058@ictuniversity.cm', 'Bachelor', 'Summer 2023'),
+            ('2020063', 'Joseph', 'Tagne', 'joseph.tagne.2020063@ictuniversity.cm', 'Master', 'Summer 2023'),
+            ('2020061', 'David', 'Zam', 'david.zam.2020061@ictuniversity.cm', 'Bachelor', 'Summer 2023'),
+            ('2020091', 'Bernard', 'Kumput', 'bernard.kumput.2020091@ictuniversity.cm', 'Bachelor', 'Summer 2025'),
+            ('2020093', 'Thomas', 'Moteng', 'thomas.moteng.2020093@ictuniversity.cm', 'Bachelor', 'Summer 2025'),
+            ('2020094', 'Christian', 'Ngong', 'christian.ngong.2020094@ictuniversity.cm', 'Master', 'Summer 2025'),
+            ('2020092', 'Daniel', 'Njiokah', 'daniel.njiokah.2020092@ictuniversity.cm', 'Bachelor', 'Summer 2025'),
+            ('2020095', 'David', 'Zam', 'david.zam.2020095@ictuniversity.cm', 'Master', 'Summer 2025'),
         ]
-
-        last_names = [
-            'Nkomo', 'Ndongo', 'Ateba', 'Mbarga', 'Epee', 'Tambe', 'Njikam', 'Kembe', 'Kah', 'Ayuk',
-            'Sieuve', 'Ako', 'Fohofung', 'Mandoum', 'Tezembapeme', 'Asako', 'Essama', 'Abong', 'Aminkeng', 'Achter',
-            'Bayiha', 'Tagne', 'Noumssi', 'Mokoondeke', 'Nzukam', 'Njinah', 'Emah', 'Fongdung', 'Ngum', 'Sevidzem',
-            'Tebah', 'Kamga', 'Tekam', 'Kumput', 'Sontah', 'Njiokah', 'Mbohi', 'Moteng', 'Temben', 'Ngong',
-            'Sounouvou', 'Zam', 'Fomena', 'Bonabebe', 'Tchonang', 'Tagne', 'Mbuah', 'Ndola', 'Ketcha', 'Fobissi',
-            'Kemtche', 'Njeumeni', 'Togalo', 'Kamkum', 'Ebot', 'Araba', 'Kem', 'Nembot', 'Tsaffo', 'Angong',
-        ]
-
-        # Term-based academic years in requested format
-        admission_data = {
-            'Fall 2020': {'count': 12, 'levels': ['bachelor'] * 8 + ['master'] * 3 + ['phd'] * 1},
-            'Spring 2021': {'count': 10, 'levels': ['bachelor'] * 7 + ['master'] * 2 + ['phd'] * 1},
-            'Summer 2021': {'count': 8, 'levels': ['bachelor'] * 5 + ['master'] * 2 + ['phd'] * 1},
-            'Fall 2022': {'count': 14, 'levels': ['bachelor'] * 9 + ['master'] * 4 + ['phd'] * 1},
-            'Spring 2023': {'count': 12, 'levels': ['bachelor'] * 8 + ['master'] * 3 + ['phd'] * 1},
-            'Summer 2023': {'count': 8, 'levels': ['bachelor'] * 5 + ['master'] * 3},
-            'Fall 2024': {'count': 14, 'levels': ['bachelor'] * 9 + ['master'] * 4 + ['phd'] * 1},
-            'Spring 2025': {'count': 12, 'levels': ['bachelor'] * 8 + ['master'] * 3 + ['phd'] * 1},
-            'Summer 2025': {'count': 5, 'levels': ['bachelor'] * 3 + ['master'] * 2},
-            'Fall 2026': {'count': 5, 'levels': ['bachelor'] * 3 + ['master'] * 2},
-        }
-
-        students_to_create = []
-        matricule_counter = 2020001
 
         AdmittedStudent.objects.all().delete()
 
-        for term_year, data in admission_data.items():
-            for i in range(data['count']):
-                first_name = first_names[(i + len(term_year)) % len(first_names)]
-                last_name = last_names[(i * 2 + len(term_year) * 3) % len(last_names)]
-                level = data['levels'][i]
-                matricule = f"{matricule_counter}"
-                clean_first = re.sub(r'[^a-z0-9]', '', first_name.lower())
-                clean_last = re.sub(r'[^a-z0-9]', '', last_name.lower())
-                email = f"{clean_first}.{clean_last}.{matricule}@ictuniversity.cm"
-                matricule_counter += 1
-
-                students_to_create.append(
-                    AdmittedStudent(
-                        matricule=matricule,
-                        first_name=first_name,
-                        last_name=last_name,
-                        email=email,
-                        level=level,
-                        admitted_year=term_year,
-                    )
+        students_to_create = []
+        for matricule, first_name, last_name, email, level, admitted_year in rows:
+            students_to_create.append(
+                AdmittedStudent(
+                    matricule=self._normalize_matricule(matricule),
+                    first_name=str(first_name).strip().title(),
+                    last_name=str(last_name).strip().title(),
+                    email=str(email).strip().lower(),
+                    level=self._normalize_level(level),
+                    admitted_year=str(admitted_year).strip(),
                 )
+            )
 
-        # Bulk create all students
         AdmittedStudent.objects.bulk_create(students_to_create, ignore_conflicts=True)
-        self.stdout.write(
-            self.style.SUCCESS(f'Successfully created {len(students_to_create)} admitted students')
-        )
+        self.stdout.write(self.style.SUCCESS(f'Successfully created {len(students_to_create)} admitted students'))

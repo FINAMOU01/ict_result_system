@@ -47,6 +47,7 @@
                         <th>Courses</th>
                         <th>Enrollments</th>
                         <th>Status</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,10 +58,13 @@
                         <td><span class="badge" style="background:#EEF4FF;color:#1A4A8A;">{{ s.course_count }}</span></td>
                         <td><span class="badge" style="background:#F3E8FF;color:#6B21A8;">{{ s.enrollment_count }}</span></td>
                         <td>{% if s.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-pending">Inactive</span>{% endif %}</td>
+                        <td>
+                            <a href="{% url 'semester_edit' s.id %}" class="btn btn-outline" style="font-size:0.72rem;padding:0.35rem 0.7rem;">Edit</a>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="text-align:center;padding:2rem 1.5rem;color:#6B7280;">
+                        <td colspan="6" style="text-align:center;padding:2rem 1.5rem;color:#6B7280;">
                             📅 No semesters yet. Create one above!
                         </td>
                     </tr>

@@ -1,0 +1,37 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Edit Semester{% endblock %}
+{% block page_title %}Edit <span class="highlight">Semester</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px;">
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <h3 class="card-title">Update Semester</h3>
+            <span class="card-action">{{ semester.name }}</span>
+        </div>
+        <div style="padding: 1.5rem;">
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div style="color:#DC2626;font-size:0.75rem;margin-top:0.3rem;">{{ field.errors|first }}</div>
+                    {% endif %}
+                    {% if field.help_text %}
+                    <div style="color:#6B7280;font-size:0.7rem;margin-top:0.3rem;">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div style="display:flex;gap:1rem;margin-top:1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Save Changes</button>
+                    <a href="{% url 'semester_list' %}" class="btn btn-outline" style="flex:1;">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

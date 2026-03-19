@@ -1,0 +1,85 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Course Students{% endblock %}
+{% block page_title %}{{ course.code }} <span class="highlight">Students</span>{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <div>
+            <div style="font-size:0.78rem;color:#6B7280;">Course</div>
+            <div style="font-size:1rem;font-weight:700;color:#0F1C2E;">{{ course.name }}</div>
+            <div style="font-size:0.8rem;color:#6B7280;margin-top:0.2rem;">
+                Semester: {{ course.semester.name }} | Level: {{ course.get_level_display }}
+            </div>
+        </div>
+        <div style="display:flex;gap:0.6rem;align-items:center;">
+            <span class="badge" style="background:#EEF4FF;color:#1A4A8A;">{{ enrollments|length }} students</span>
+            <a href="{% url 'course_list' %}" class="btn btn-outline">Back to Courses</a>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="padding: 1.25rem 1.5rem;">
+        <form method="get" style="display:flex;gap:0.8rem;align-items:flex-end;">
+            <div style="flex:1;">
+                <label class="form-label">Search in this course</label>
+                <input type="text" name="q" value="{{ query }}" placeholder="Matricule, name or email..." class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+            {% if query %}
+            <a href="{% url 'admin_course_students' course.id %}" class="btn btn-outline">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Students Offering This Course</h3>
+    </div>
+    <div style="overflow-x:auto;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Matricule</th>
+                    <th>Full Name</th>
+                    <th>Email</th>
+                    <th>Level</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for enrollment in enrollments %}
+                <tr>
+                    <td style="color:#94A3B8;font-size:0.78rem;">{{ forloop.counter }}</td>
+                    <td><code style="font-family:'JetBrains Mono', monospace; color:#1A4A8A;">{{ enrollment.student.matricule }}</code></td>
+                    <td><strong>{{ enrollment.student.full_name }}</strong></td>
+                    <td style="font-size:0.84rem;">{{ enrollment.student.email|default:"—" }}</td>
+                    <td>
+                        <span class="badge {% if enrollment.student.level == 'bachelor' %}badge-bachelor{% elif enrollment.student.level == 'master' %}badge-master{% else %}badge-phd{% endif %}">
+                            {{ enrollment.student.get_level_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if enrollment.student.is_walkin %}
+                        <span class="badge" style="background:#FFF7ED;color:#C2410C;">Walk-in</span>
+                        {% else %}
+                        <span class="badge" style="background:#ECFDF5;color:#065F46;">Registered</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:2rem 1.5rem;color:#6B7280;">
+                        👥 No students found for this course
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -53,7 +53,34 @@
                             {{ student.get_level_display }}
                         </span>
                     </td>
-                    <td><span class="badge" style="background:#EEF4FF;color:#1A4A8A;">{{ student.enrollment_count }}</span></td>
+                    <td>
+                        <button
+                            type="button"
+                            class="badge"
+                            style="background:#EEF4FF;color:#1A4A8A;border:none;cursor:pointer;"
+                            data-toggle-id="courses-{{ student.id }}"
+                            aria-expanded="false"
+                            title="Click to view course names"
+                        >
+                            {{ student.enrollment_count }}
+                        </button>
+                    </td>
+                </tr>
+                <tr id="courses-{{ student.id }}" style="display:none;background:#FAFBFF;">
+                    <td colspan="5" style="padding:0.9rem 1.2rem;">
+                        <div style="font-size:0.78rem;color:#475569;font-weight:600;margin-bottom:0.4rem;">Courses taken:</div>
+                        {% if student.enrollments.all %}
+                            <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                                {% for enrollment in student.enrollments.all %}
+                                    <span style="display:inline-block;background:#F1F5F9;color:#0F1C2E;border:1px solid #E2E8F0;padding:0.25rem 0.5rem;border-radius:999px;font-size:0.72rem;">
+                                        {{ enrollment.course.code }} - {{ enrollment.course.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span style="font-size:0.75rem;color:#6B7280;">No enrolled courses.</span>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
@@ -66,4 +93,28 @@
         </table>
     </div>
 </div>
+
+<script>
+document.querySelectorAll('button[data-toggle-id]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var id = btn.getAttribute('data-toggle-id');
+        var row = document.getElementById(id);
+        if (!row) return;
+
+        var isOpen = row.style.display !== 'none';
+
+        document.querySelectorAll('tr[id^="courses-"]').forEach(function(otherRow) {
+            otherRow.style.display = 'none';
+        });
+        document.querySelectorAll('button[data-toggle-id]').forEach(function(otherBtn) {
+            otherBtn.setAttribute('aria-expanded', 'false');
+        });
+
+        if (!isOpen) {
+            row.style.display = 'table-row';
+            btn.setAttribute('aria-expanded', 'true');
+        }
+    });
+});
+</script>
 {% endblock %}

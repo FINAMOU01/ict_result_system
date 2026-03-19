@@ -1,0 +1,499 @@
+{% extends "admin_panel/base_admin.html" %}
+{% load static %}
+
+{% block title %}Activity Log - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <h1>System Activity Log</h1>
+    <p class="subtitle">Comprehensive audit trail of all user actions and system events</p>
+</div>
+
+<style>
+    .filters-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .filter-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #444;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: #0D2E5E;
+        box-shadow: 0 0 0 3px rgba(13, 46, 94, 0.1);
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+    }
+
+    .btn-filter,
+    .btn-clear {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-filter {
+        background: #0D2E5E;
+        color: white;
+    }
+
+    .btn-filter:hover {
+        background: #0a2347;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 46, 94, 0.3);
+    }
+
+    .btn-clear {
+        background: #e0e0e0;
+        color: #333;
+    }
+
+    .btn-clear:hover {
+        background: #d0d0d0;
+    }
+
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #0D2E5E;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0D2E5E;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #999;
+        margin-top: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .logs-table thead {
+        background: #0D2E5E;
+        color: white;
+    }
+
+    .logs-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .logs-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s;
+    }
+
+    .logs-table tbody tr:hover {
+        background: #f9f9f9;
+    }
+
+    .logs-table td {
+        padding: 12px 15px;
+        font-size: 14px;
+    }
+
+    .action-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .action-login {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .action-create {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .action-update {
+        background: #fff3cd;
+        color: #664d03;
+    }
+
+    .action-delete {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .action-import {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .action-submit {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .action-other {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-failed {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .status-warning {
+        background: #fff3cd;
+        color: #664d03;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #0D2E5E;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .timestamp-col {
+        white-space: nowrap;
+        font-size: 13px;
+        color: #666;
+    }
+
+    .description-col {
+        max-width: 400px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .description-col:hover {
+        cursor: help;
+        text-decoration: underline;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #666;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 5px;
+        margin-top: 25px;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        color: #0D2E5E;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .pagination a:hover {
+        background: #f0f0f0;
+    }
+
+    .pagination .current {
+        background: #0D2E5E;
+        color: white;
+        border-color: #0D2E5E;
+    }
+
+    .pagination .disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .ip-address {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        background: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+        color: #333;
+    }
+</style>
+
+<!-- Filters Section -->
+<div class="filters-section">
+    <form method="get" class="filter-form">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="action">Action Type</label>
+                <select name="action" id="action">
+                    <option value="">All Actions</option>
+                    {% for value, label in action_choices %}
+                        <option value="{{ value }}" {% if action_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="user">User</label>
+                <select name="user" id="user">
+                    <option value="">All Users</option>
+                    {% for user in users %}
+                        <option value="{{ user.id }}" {% if user_filter|stringformat:"s" == user.id|stringformat:"s" %}selected{% endif %}>
+                            {{ user.get_full_name }} ({{ user.get_role_display }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="status">Status</label>
+                <select name="status" id="status">
+                    <option value="">All Statuses</option>
+                    <option value="success" {% if status_filter == "success" %}selected{% endif %}>Success</option>
+                    <option value="failed" {% if status_filter == "failed" %}selected{% endif %}>Failed</option>
+                    <option value="warning" {% if status_filter == "warning" %}selected{% endif %}>Warning</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="q">Search Description</label>
+                <input type="text" name="q" id="q" placeholder="Search..." value="{{ query }}">
+            </div>
+        </div>
+
+        <div class="filter-buttons">
+            <button type="submit" class="btn-filter">🔍 Apply Filters</button>
+            <a href="{% url 'activity_log' %}" class="btn-clear">✕ Clear Filters</a>
+        </div>
+    </form>
+</div>
+
+<!-- Stats Bar -->
+<div class="stats-bar">
+    <div class="stat-card">
+        <div class="stat-value">{{ total_logs }}</div>
+        <div class="stat-label">Total Activities</div>
+    </div>
+</div>
+
+<!-- Logs Table -->
+{% if logs %}
+    <table class="logs-table">
+        <thead>
+            <tr>
+                <th style="width: 20%;">User</th>
+                <th style="width: 15%;">Action</th>
+                <th style="width: 35%;">Description</th>
+                <th style="width: 15%;">Timestamp</th>
+                <th style="width: 10%;">Status</th>
+                <th style="width: 5%;">IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            {% if log.user %}
+                                <div class="user-avatar">
+                                    {{ log.user.first_name|slice:":1" }}{{ log.user.last_name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <strong>{{ log.user.get_full_name }}</strong>
+                                    <br>
+                                    <small style="color: #999;">{{ log.user.get_role_display }}</small>
+                                </div>
+                            {% else %}
+                                <div class="user-avatar" style="background: #999;">SYS</div>
+                                <div>
+                                    <strong>System</strong>
+                                    <br>
+                                    <small style="color: #999;">Automated</small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="action-badge action-{% if 'login' in log.action %}login{% elif 'create' in log.action %}create{% elif 'update' in log.action %}update{% elif 'delete' in log.action %}delete{% elif 'import' in log.action %}import{% elif 'submit' in log.action %}submit{% else %}other{% endif %}">
+                            {{ log.get_action_display }}
+                        </span>
+                    </td>
+                    <td class="description-col" title="{{ log.description }}">
+                        {{ log.description }}
+                    </td>
+                    <td class="timestamp-col">
+                        {{ log.timestamp|date:"M d, Y H:i:s" }}
+                    </td>
+                    <td>
+                        <span class="status-badge status-{{ log.status }}">
+                            {{ log.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if log.ip_address %}
+                            <span class="ip-address" title="{{ log.ip_address }}">
+                                {{ log.ip_address|truncatewords:1 }}
+                            </span>
+                        {% else %}
+                            <span style="color: #ccc;">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    ← First
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    ← Previous
+                </a>
+            {% else %}
+                <span class="disabled">← First</span>
+                <span class="disabled">← Previous</span>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <span class="current">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <a href="?page={{ num }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                        {{ num }}
+                    </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    Next →
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                    Last →
+                </a>
+            {% else %}
+                <span class="disabled">Next →</span>
+                <span class="disabled">Last →</span>
+            {% endif %}
+        </div>
+    {% endif %}
+{% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <h3>No Activities Found</h3>
+        <p>No system activities match your filters. Try adjusting your search criteria.</p>
+    </div>
+{% endif %}
+
+{% endblock %}

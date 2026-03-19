@@ -749,7 +749,8 @@
             <!-- Subtitle -->
             <p class="subtitle">Enter your credentials to access the system</p>
 
-            <!-- Messages -->
+            <!-- Messages (HIDDEN - Notifications moved to admin activity log) -->
+            {% comment %}
             {% if messages %}
                 {% for message in messages %}
                 <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
@@ -757,6 +758,7 @@
                 </div>
                 {% endfor %}
             {% endif %}
+            {% endcomment %}
 
             <!-- Role selector tabs -->
             <div class="role-tabs">
