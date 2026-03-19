@@ -9,10 +9,27 @@ class Grade(models.Model):
         ('submitted', 'Submitted to Registra'),
         ('decoded', 'Decoded & Finalized'),
     ]
+    
+    GRADE_CHOICES = [
+        ('A', 'A (4.0)'),
+        ('B+', 'B+ (3.5)'),
+        ('B', 'B (3.0)'),
+        ('C+', 'C+ (2.5)'),
+        ('C', 'C (2.0)'),
+        ('D+', 'D+ (1.5)'),
+        ('D', 'D (1.0)'),
+        ('F', 'F (0.0)'),
+    ]
+    
     enrollment = models.OneToOneField(Enrollment, on_delete=models.CASCADE, related_name='grade')
-    cc_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
-    sn_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cc_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, 
+                                   help_text="Continuous Assessment (0-20)")
+    sn_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                   help_text="Semester Exam (0-70)")
+    attendance_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                          default=0, help_text="Attendance (0-10)")
     final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    letter_grade = models.CharField(max_length=2, choices=GRADE_CHOICES, null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     submitted_by = models.ForeignKey(
         CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
@@ -26,9 +43,37 @@ class Grade(models.Model):
         ordering = ['enrollment__anonymous_code']
 
     def calculate_final(self):
+        """
+        Calculate final score and letter grade.
+        Final Score = CC (0-20) + Attendance (0-10) + SN (0-70) = 100 total
+        """
         if self.cc_score is not None and self.sn_score is not None:
-            self.final_score = round(self.cc_score + self.sn_score, 2)
+            attendance = self.attendance_score if self.attendance_score is not None else 0
+            self.final_score = round(float(self.cc_score) + float(attendance) + float(self.sn_score), 2)
+            self.letter_grade = self.get_letter_grade(self.final_score)
         return self.final_score
+
+    def get_letter_grade(self, score):
+        """Convert numerical score to letter grade"""
+        if score is None:
+            return None
+        score = float(score)
+        if 80 <= score <= 100:
+            return 'A'
+        elif 70 <= score < 80:
+            return 'B+'
+        elif 60 <= score < 70:
+            return 'B'
+        elif 55 <= score < 60:
+            return 'C+'
+        elif 50 <= score < 55:
+            return 'C'
+        elif 45 <= score < 50:
+            return 'D+'
+        elif 40 <= score < 45:
+            return 'D'
+        else:
+            return 'F'
 
     def __str__(self):
         return f"Grade for Code {self.enrollment.anonymous_code} in {self.enrollment.course.code}"

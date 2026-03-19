@@ -53,7 +53,11 @@
                 {% for course in courses %}
                 <tr>
                     <td><code style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:#1A4A8A;">{{ course.code }}</code></td>
-                    <td><strong>{{ course.name }}</strong></td>
+                    <td>
+                        <a href="{% url 'admin_course_students' course.id %}" style="text-decoration:none;color:#1A4A8A;font-weight:700;">
+                            {{ course.name }}
+                        </a>
+                    </td>
                     <td>
                         <span class="badge {% if course.level == 'bachelor' %}badge-bachelor{% elif course.level == 'master' %}badge-master{% else %}badge-phd{% endif %}">
                             {{ course.get_level_display }}

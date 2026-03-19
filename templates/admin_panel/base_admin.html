@@ -646,6 +646,12 @@
                 <div class="nav-icon">🔑</div>
                 <span class="nav-text">User Accounts</span>
             </a>
+
+            <div class="nav-label" style="margin-top:1rem;">Audit</div>
+            <a href="{% url 'activity_log' %}" class="nav-item {% if request.resolver_match.url_name == 'activity_log' %}active{% endif %}">
+                <div class="nav-icon">📋</div>
+                <span class="nav-text">Activity Log</span>
+            </a>
         </nav>
 
         <div class="sidebar-footer">

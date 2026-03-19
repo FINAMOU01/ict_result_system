@@ -29,18 +29,22 @@
         <thead>
             <tr>
                 <th style="width:80px;">Code</th>
-                <th style="width:100px;">Attendance/10</th>
-                <th style="width:100px;">Assignment/20</th>
-                <th style="width:100px;">CA/30</th>
-                <th style="width:100px;">Final/70</th>
+                <th style="width:100px;">Attendance<small>/10</small></th>
+                <th style="width:100px;">CC<small>/20</small></th>
+                <th style="width:100px;">SN<small>/70</small></th>
+                <th style="width:100px;">Final<small>/100</small></th>
+                <th style="width:80px;">Grade</th>
             </tr>
         </thead>
         <tbody>
             {% for enrollment in enrollments %}
             <tr>
                 <td><span class="code-number">{{ enrollment.anonymous_code }}</span></td>
-                <td class="score-display dash">—</td>
-                <td class="score-display dash">—</td>
+                <td class="score-display">
+                    {% if enrollment.grade.attendance_score is not None %}
+                    {{ enrollment.grade.attendance_score }}
+                    {% else %}—{% endif %}
+                </td>
                 <td class="score-display">
                     {% if enrollment.grade.cc_score is not None %}
                     {{ enrollment.grade.cc_score }}
@@ -51,9 +55,19 @@
                     {{ enrollment.grade.sn_score }}
                     {% else %}—{% endif %}
                 </td>
+                <td class="score-display">
+                    {% if enrollment.grade.final_score is not None %}
+                    {{ enrollment.grade.final_score }}
+                    {% else %}—{% endif %}
+                </td>
+                <td class="score-display">
+                    {% if enrollment.grade.letter_grade %}
+                    <strong>{{ enrollment.grade.letter_grade }}</strong>
+                    {% else %}—{% endif %}
+                </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" class="text-center text-muted py-4">No grades submitted yet.</td></tr>
+            <tr><td colspan="6" class="text-center text-muted py-4">No grades submitted yet.</td></tr>
             {% endfor %}
         </tbody>
     </table>

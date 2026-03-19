@@ -3,7 +3,17 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import LoginForm, CreateUserForm
-from .models import CustomUser
+from .models import CustomUser, ActivityLog
+
+
+def get_client_ip(request):
+    """Get client IP address from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 
 def login_view(request):
@@ -13,6 +23,18 @@ def login_view(request):
     if request.method == 'POST' and form.is_valid():
         user = form.get_user()
         login(request, user)
+        
+        # Log successful login
+        ip_address = get_client_ip(request)
+        ActivityLog.objects.create(
+            user=user,
+            action='login',
+            description=f"User {user.username} ({user.get_full_name()}) logged in from {ip_address}",
+            affected_entity=f"User: {user.username}",
+            ip_address=ip_address,
+            status='success'
+        )
+        
         # Redirect based on user role immediately
         if user.role == 'admin':
             return redirect('admin_dashboard')
@@ -21,6 +43,8 @@ def login_view(request):
         elif user.role == 'professor':
             return redirect('professor_dashboard')
         return redirect('dashboard')
+    
+    # Don't pass form to template with display of messages (we'll not show notifications on login)
     return render(request, 'accounts/login.html', {'form': form})
 
 

@@ -249,6 +249,46 @@
         background: #FEE2E2;
         color: #991B1B !important;
     }
+    .letter-grade-display {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 900;
+        font-size: 1.2rem;
+        padding: 0.6rem 1rem;
+        background: #EEF2F8;
+        border-radius: 8px;
+        display: inline-block;
+        min-width: 60px;
+        text-align: center;
+    }
+    .letter-grade-display[data-grade="A"] {
+        background: #DCFCE7;
+        color: #166534;
+    }
+    .letter-grade-display[data-grade="B+"],
+    .letter-grade-display[data-grade="B"] {
+        background: #D1E7DD;
+        color: #0F5132;
+    }
+    .letter-grade-display[data-grade="C+"],
+    .letter-grade-display[data-grade="C"] {
+        background: #FFF3CD;
+        color: #664D03;
+    }
+    .letter-grade-display[data-grade="D+"],
+    .letter-grade-display[data-grade="D"] {
+        background: #FFE5B4;
+        color: #8B5A00;
+    }
+    .letter-grade-display[data-grade="F"] {
+        background: #FEE2E2;
+        color: #991B1B;
+    }
+    .validation-error {
+        color: #DC2626;
+        font-size: 0.85rem;
+        margin-top: 0.3rem;
+        display: none;
+    }
     .no-students {
         text-align: center;
         padding: 3rem 2rem;
@@ -357,9 +397,10 @@
         <i class="bi bi-info-circle-fill"></i>
         <div class="alert-instructions-text">
             <strong>Grading Instructions</strong>
-            <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">You can only see anonymous codes assigned by the Registra. Enter CC (0–30) for continuous assessment and SN (0–70) for summative assessment. Save progress at any time, and submit when all grades are complete.</p>
+            <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">Enter grades for each component. CC Score (0–20) for continuous assessment, Attendance (0–10) for participation, and SN Score (0–70) for semester exam. Save progress at any time, and submit when all grades are complete. Letter grades are automatically calculated.</p>
             <div class="alert-instructions-formula">
-                <strong>Formula:</strong> Final Grade = CC + SN (Maximum 100 points)
+                <strong>Formula:</strong> Final Grade = CC (0–20) + Attendance (0–10) + SN (0–70) = 100 points<br>
+                <strong>Letter Grades:</strong> A: 80-100 | B+: 70-79 | B: 60-69 | C+: 55-59 | C: 50-54 | D+: 45-49 | D: 40-44 | F: 0-39
             </div>
         </div>
     </div>
@@ -377,45 +418,83 @@
                 <thead>
                     <tr>
                         <th>Anonymous Code</th>
-                        <th>CC Score <small>(0–30)</small></th>
+                        <th>CC Score <small>(0–20)</small></th>
+                        <th>Attendance <small>(0–10)</small></th>
                         <th>SN Score <small>(0–70)</small></th>
                         <th>Final Grade</th>
+                        <th>Letter Grade</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for enrollment in enrollments %}
                     <tr id="row-{{ enrollment.id }}">
                         <td><span class="code-number">{{ enrollment.anonymous_code }}</span></td>
+                        
+                        <!-- CC Score (0-20) -->
                         <td>
                             {% if course.grades_submitted %}
                             <span class="final-display">{{ enrollment.grade.cc_score|default:"—" }}</span>
                             {% else %}
-                            <input type="number" name="cc_{{ enrollment.id }}"
-                                value="{{ enrollment.grade.cc_score|default:'' }}"
-                                class="form-control grade-input"
-                                min="0" max="30" step="0.25"
-                                placeholder="0–30"
-                                onchange="updateFinal('{{ enrollment.id }}')"
-                                oninput="updateFinal('{{ enrollment.id }}')">
+                            <div>
+                                <input type="number" name="cc_{{ enrollment.id }}"
+                                    value="{{ enrollment.grade.cc_score|default:'' }}"
+                                    class="form-control grade-input"
+                                    min="0" max="20" step="0.25"
+                                    placeholder="0–20"
+                                    oninput="validateCC(this, '{{ enrollment.id }}')">
+                                <div class="validation-error" id="cc_error_{{ enrollment.id }}">Max: 20</div>
+                            </div>
                             {% endif %}
                         </td>
+                        
+                        <!-- Attendance (0-10) -->
+                        <td>
+                            {% if course.grades_submitted %}
+                            <span class="final-display">{{ enrollment.grade.attendance_score|default:"—" }}</span>
+                            {% else %}
+                            <div>
+                                <input type="number" name="attendance_{{ enrollment.id }}"
+                                    value="{{ enrollment.grade.attendance_score|default:'' }}"
+                                    class="form-control grade-input"
+                                    min="0" max="10" step="0.25"
+                                    placeholder="0–10"
+                                    oninput="validateAttendance(this, '{{ enrollment.id }}')">
+                                <div class="validation-error" id="attendance_error_{{ enrollment.id }}">Max: 10</div>
+                            </div>
+                            {% endif %}
+                        </td>
+                        
+                        <!-- SN Score (0-70) -->
                         <td>
                             {% if course.grades_submitted %}
                             <span class="final-display">{{ enrollment.grade.sn_score|default:"—" }}</span>
                             {% else %}
-                            <input type="number" name="sn_{{ enrollment.id }}"
-                                value="{{ enrollment.grade.sn_score|default:'' }}"
-                                class="form-control grade-input"
-                                min="0" max="70" step="0.25"
-                                placeholder="0–70"
-                                onchange="updateFinal('{{ enrollment.id }}')"
-                                oninput="updateFinal('{{ enrollment.id }}')">
+                            <div>
+                                <input type="number" name="sn_{{ enrollment.id }}"
+                                    value="{{ enrollment.grade.sn_score|default:'' }}"
+                                    class="form-control grade-input"
+                                    min="0" max="70" step="0.25"
+                                    placeholder="0–70"
+                                    oninput="validateSN(this, '{{ enrollment.id }}')">
+                                <div class="validation-error" id="sn_error_{{ enrollment.id }}">Max: 70</div>
+                            </div>
                             {% endif %}
                         </td>
+                        
+                        <!-- Final Grade Display -->
                         <td>
                             <span class="final-display" id="final-{{ enrollment.id }}">
                                 {% if enrollment.grade.final_score %}
                                 {{ enrollment.grade.final_score }}
+                                {% else %}—{% endif %}
+                            </span>
+                        </td>
+                        
+                        <!-- Letter Grade Display -->
+                        <td>
+                            <span class="letter-grade-display" id="letter-{{ enrollment.id }}" data-grade="">
+                                {% if enrollment.grade.letter_grade %}
+                                {{ enrollment.grade.letter_grade }}
                                 {% else %}—{% endif %}
                             </span>
                         </td>
@@ -436,7 +515,7 @@
             <i class="bi bi-send"></i>Submit to Registra
         </button>
         <div class="grading-hint">
-            💡 Tip: CC (0–30) + SN (0–70) = Final (0–100)
+            💡 Tip: CC (0–20) + Attendance (0–10) + SN (0–70) = Final (0–100). Do not exceed maximum values.
         </div>
     </div>
     {% endif %}
@@ -455,18 +534,161 @@
 
 {% block extra_js %}
 <script>
+/**
+ * Get letter grade based on final score
+ * A: 80-100, B+: 70-79, B: 60-69, C+: 55-59, C: 50-54, D+: 45-49, D: 40-44, F: 0-39
+ */
+function getLetterGrade(score) {
+    if (score === null || score === undefined || isNaN(score)) return null;
+    score = parseFloat(score);
+    if (score >= 80) return 'A';
+    if (score >= 70) return 'B+';
+    if (score >= 60) return 'B';
+    if (score >= 55) return 'C+';
+    if (score >= 50) return 'C';
+    if (score >= 45) return 'D+';
+    if (score >= 40) return 'D';
+    return 'F';
+}
+
+/**
+ * Get color for final score (green if >= 50, red otherwise)
+ */
+function getScoreColor(score) {
+    const final = parseFloat(score);
+    return final >= 50 ? '#166534' : '#9B2226';
+}
+
+/**
+ * Update final grade and letter grade when any input changes
+ */
 function updateFinal(enrollmentId) {
     const cc = parseFloat(document.querySelector(`[name="cc_${enrollmentId}"]`)?.value) || null;
+    const attendance = parseFloat(document.querySelector(`[name="attendance_${enrollmentId}"]`)?.value) || 0;
     const sn = parseFloat(document.querySelector(`[name="sn_${enrollmentId}"]`)?.value) || null;
+    
     const finalEl = document.getElementById(`final-${enrollmentId}`);
+    const letterEl = document.getElementById(`letter-${enrollmentId}`);
+    
+    // Calculate final only if CC and SN are provided (attendance defaults to 0)
     if (cc !== null && sn !== null && !isNaN(cc) && !isNaN(sn)) {
-        const final = (cc + sn).toFixed(2);
+        const final = (cc + attendance + sn).toFixed(2);
         finalEl.textContent = final;
-        finalEl.style.color = parseFloat(final) >= 50 ? '#166534' : '#9B2226';
+        finalEl.style.color = getScoreColor(final);
+        
+        // Calculate and display letter grade
+        const letterGrade = getLetterGrade(final);
+        letterEl.textContent = letterGrade || '—';
+        letterEl.setAttribute('data-grade', letterGrade || '');
     } else {
         finalEl.textContent = '—';
         finalEl.style.color = '';
+        letterEl.textContent = '—';
+        letterEl.setAttribute('data-grade', '');
     }
 }
+
+/**
+ * Validate CC score (max 20) and trigger calculation
+ */
+function validateCC(input, enrollmentId) {
+    const errorEl = document.getElementById(`cc_error_${enrollmentId}`);
+    const value = parseFloat(input.value);
+    
+    if (input.value === '') {
+        // Empty is OK
+        input.style.borderColor = '';
+        errorEl.style.display = 'none';
+    } else if (value > 20) {
+        // Over max - reject
+        input.style.borderColor = '#DC2626';
+        errorEl.style.display = 'block';
+        input.value = '';
+    } else if (value < 0) {
+        // Negative - reject
+        input.style.borderColor = '#DC2626';
+        errorEl.style.display = 'block';
+        input.value = '';
+    } else {
+        // Valid value
+        input.style.borderColor = '';
+        errorEl.style.display = 'none';
+    }
+    
+    // Always update final grade after validation
+    updateFinal(enrollmentId);
+}
+
+/**
+ * Validate Attendance score (max 10) and trigger calculation
+ */
+function validateAttendance(input, enrollmentId) {
+    const errorEl = document.getElementById(`attendance_error_${enrollmentId}`);
+    const value = parseFloat(input.value);
+    
+    if (input.value === '') {
+        // Empty is OK
+        input.style.borderColor = '';
+        errorEl.style.display = 'none';
+    } else if (value > 10) {
+        // Over max - reject
+        input.style.borderColor = '#DC2626';
+        errorEl.style.display = 'block';
+        input.value = '';
+    } else if (value < 0) {
+        // Negative - reject
+        input.style.borderColor = '#DC2626';
+        errorEl.style.display = 'block';
+        input.value = '';
+    } else {
+        // Valid value
+        input.style.borderColor = '';
+        errorEl.style.display = 'none';
+    }
+    
+    // Always update final grade after validation
+    updateFinal(enrollmentId);
+}
+
+/**
+ * Validate SN score (max 70) and trigger calculation
+ */
+function validateSN(input, enrollmentId) {
+    const errorEl = document.getElementById(`sn_error_${enrollmentId}`);
+    const value = parseFloat(input.value);
+    
+    if (input.value === '') {
+        // Empty is OK
+        input.style.borderColor = '';
+        errorEl.style.display = 'none';
+    } else if (value > 70) {
+        // Over max - reject
+        input.style.borderColor = '#DC2626';
+        errorEl.style.display = 'block';
+        input.value = '';
+    } else if (value < 0) {
+        // Negative - reject
+        input.style.borderColor = '#DC2626';
+        errorEl.style.display = 'block';
+        input.value = '';
+    } else {
+        // Valid value
+        input.style.borderColor = '';
+        errorEl.style.display = 'none';
+    }
+    
+    // Always update final grade after validation
+    updateFinal(enrollmentId);
+}
+
+// Initialize all grades on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all enrollment IDs from the table rows
+    document.querySelectorAll('tr[id^="row-"]').forEach(row => {
+        const enrollmentId = row.id.replace('row-', '');
+        // Calculate initial grades if values are already present
+        updateFinal(enrollmentId);
+    });
+});
 </script>
 {% endblock %}

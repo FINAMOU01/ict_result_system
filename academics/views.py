@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Q
 from .models import Semester, Course, Student, Enrollment, ImportLog, AdmittedStudent
 from .forms import SemesterForm, ImportFileForm, AssignProfessorForm
-from .utils import import_enrollment_file
-from accounts.models import CustomUser
+from .utils import import_enrollment_file, build_import_preview, import_enrollment_records
+from accounts.models import CustomUser, ActivityLog
 from results.models import Grade
 
 
@@ -52,10 +53,37 @@ def admin_dashboard(request):
 
 @login_required
 @role_required(['admin'])
+def reset_demo_data(request):
+    """Wipe operational academic data for demo restart (admin only)."""
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('admin_dashboard')
+
+    confirm_text = request.POST.get('confirm_reset', '').strip()
+    if confirm_text != 'RESET':
+        messages.error(request, "Reset cancelled. Type RESET to confirm.")
+        return redirect('admin_dashboard')
+
+    with transaction.atomic():
+        # Delete dependent/operational data first; keep users and semesters for quick re-import demos.
+        Grade.objects.all().delete()
+        Enrollment.objects.all().delete()
+        Course.objects.all().delete()
+        Student.objects.all().delete()
+        ImportLog.objects.all().delete()
+
+        request.session.pop('import_preview', None)
+
+    messages.success(request, "Demo data reset successfully. You can now import CSV from scratch.")
+    return redirect('admin_dashboard')
+
+
+@login_required
+@role_required(['admin'])
 def semester_list(request):
     semesters = Semester.objects.annotate(
-        course_count=Count('courses'),
-        enrollment_count=Count('enrollments')
+        course_count=Count('courses', distinct=True),
+        enrollment_count=Count('enrollments', distinct=True)
     ).order_by('-created_at')
     form = SemesterForm()
     if request.method == 'POST':
@@ -69,18 +97,69 @@ def semester_list(request):
 
 @login_required
 @role_required(['admin'])
+def semester_edit(request, semester_id):
+    semester = get_object_or_404(Semester, id=semester_id)
+    form = SemesterForm(request.POST or None, instance=semester)
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "Semester updated successfully.")
+        return redirect('semester_list')
+
+    return render(request, 'admin_panel/semester_edit.html', {
+        'form': form,
+        'semester': semester,
+    })
+
+
+@login_required
+@role_required(['admin'])
 def import_file(request):
     form = ImportFileForm()
+
+    preview_data = None
+    if request.session.get('import_preview'):
+        preview_data = request.session.get('import_preview')
+
     if request.method == 'POST':
-        form = ImportFileForm(request.POST, request.FILES)
-        if form.is_valid():
+        if 'preview_import' in request.POST:
+            form = ImportFileForm(request.POST, request.FILES)
+            if form.is_valid():
+                try:
+                    preview = build_import_preview(request.FILES['file'])
+                    request.session['import_preview'] = {
+                        'file_name': preview['file_name'],
+                        'semester_id': form.cleaned_data['semester'].id,
+                        'records': preview['records'],
+                        'course_summary': preview['course_summary'],
+                        'course_details': preview['course_details'],
+                        'preview_rows': preview['preview_rows'],
+                        'total_rows': preview['total_rows'],
+                        'total_courses': preview['total_courses'],
+                        'errors': preview['errors'],
+                    }
+                    preview_data = request.session['import_preview']
+                    messages.success(request, "Preview generated. Validate to import the data.")
+                except ValueError as e:
+                    messages.error(request, str(e))
+                except Exception as e:
+                    messages.error(request, f"Preview failed: {str(e)}")
+
+        elif 'confirm_import' in request.POST:
+            preview_data = request.session.get('import_preview')
+            if not preview_data:
+                messages.error(request, "No preview found. Upload and preview a file first.")
+                return redirect('import_file')
             try:
-                log = import_enrollment_file(
-                    request.FILES['file'],
-                    form.cleaned_data['semester'].id,
-                    request.user
+                log = import_enrollment_records(
+                    preview_data.get('records', []),
+                    preview_data.get('semester_id'),
+                    request.user,
+                    preview_data.get('file_name', 'imported_file.csv'),
                 )
-                messages.success(request,
+                request.session.pop('import_preview', None)
+                messages.success(
+                    request,
                     f"Import successful! {log.students_created} new students, "
                     f"{log.courses_created} new courses, {log.enrollments_created} enrollments created."
                 )
@@ -91,7 +170,16 @@ def import_file(request):
                 messages.error(request, str(e))
             except Exception as e:
                 messages.error(request, f"Import failed: {str(e)}")
-    return render(request, 'admin_panel/import_file.html', {'form': form})
+
+        elif 'cancel_preview' in request.POST:
+            request.session.pop('import_preview', None)
+            messages.info(request, "Import preview cancelled.")
+            return redirect('import_file')
+
+    return render(request, 'admin_panel/import_file.html', {
+        'form': form,
+        'preview_data': preview_data,
+    })
 
 
 @login_required
@@ -104,7 +192,7 @@ def course_list(request):
     selected_semester = None
 
     courses = Course.objects.select_related('professor', 'semester').annotate(
-        student_count=Count('enrollments')
+        student_count=Count('enrollments', distinct=True)
     )
     if semester_id:
         courses = courses.filter(semester_id=semester_id)
@@ -120,6 +208,31 @@ def course_list(request):
         'semesters': semesters,
         'selected_semester': selected_semester,
         'level_filter': level_filter,
+    })
+
+
+@login_required
+@role_required(['admin'])
+def admin_course_students(request, course_id):
+    course = get_object_or_404(
+        Course.objects.select_related('semester', 'professor'),
+        id=course_id
+    )
+    query = request.GET.get('q', '').strip()
+
+    enrollments = course.enrollments.select_related('student').order_by('student__last_name', 'student__first_name')
+    if query:
+        enrollments = enrollments.filter(
+            Q(student__matricule__icontains=query) |
+            Q(student__last_name__icontains=query) |
+            Q(student__first_name__icontains=query) |
+            Q(student__email__icontains=query)
+        )
+
+    return render(request, 'admin_panel/course_students.html', {
+        'course': course,
+        'enrollments': enrollments,
+        'query': query,
     })
 
 
@@ -142,7 +255,9 @@ def assign_professor(request, course_id):
 def student_list(request):
     query = request.GET.get('q', '')
     level_filter = request.GET.get('level', '')
-    students = Student.objects.annotate(enrollment_count=Count('enrollments'))
+    students = Student.objects.annotate(
+        enrollment_count=Count('enrollments', distinct=True)
+    ).prefetch_related('enrollments__course')
     if query:
         students = students.filter(
             Q(matricule__icontains=query) |
@@ -190,15 +305,26 @@ def admissions_registry(request):
 @role_required(['registra'])
 def registra_dashboard(request):
     active_semester = Semester.objects.filter(is_active=True).first()
+
     if active_semester:
         courses = Course.objects.filter(semester=active_semester).annotate(
-            student_count=Count('enrollments')
+            student_count=Count('enrollments', distinct=True)
         ).order_by('name')
+        courses_coded = courses.filter(is_coded=True).count()
+        courses_decoded = courses.filter(is_decoded=True).count()
+        total_students = Enrollment.objects.filter(semester=active_semester).values('student').distinct().count()
     else:
         courses = Course.objects.none()
+        courses_coded = 0
+        courses_decoded = 0
+        total_students = 0
+
     return render(request, 'registra/dashboard.html', {
         'active_semester': active_semester,
         'courses': courses,
+        'courses_coded': courses_coded,
+        'courses_decoded': courses_decoded,
+        'total_students': total_students,
     })
 
 
@@ -231,7 +357,7 @@ def registra_semester_history(request):
     
     for semester in all_semesters:
         courses = Course.objects.filter(semester=semester).annotate(
-            student_count=Count('enrollments')
+            student_count=Count('enrollments', distinct=True)
         ).order_by('name')
         
         # Count graded and decoded for this semester
@@ -500,7 +626,7 @@ def professor_dashboard(request):
         courses = Course.objects.filter(
             professor=request.user,
             semester=active_semester
-        ).annotate(student_count=Count('enrollments')).order_by('name')
+        ).annotate(student_count=Count('enrollments', distinct=True)).order_by('name')
     else:
         courses = Course.objects.none()
     return render(request, 'professor/dashboard.html', {
@@ -528,20 +654,46 @@ def professor_grade_course(request, course_id):
         for enrollment in enrollments:
             cc_key = f'cc_{enrollment.id}'
             sn_key = f'sn_{enrollment.id}'
+            attendance_key = f'attendance_{enrollment.id}'
+            
             cc_val = request.POST.get(cc_key, '').strip()
             sn_val = request.POST.get(sn_key, '').strip()
+            attendance_val = request.POST.get(attendance_key, '').strip()
+            
             try:
                 grade, _ = Grade.objects.get_or_create(enrollment=enrollment)
+                
+                # Validate and set CC score (max 20)
                 if cc_val:
                     cc = float(cc_val)
-                    if not 0 <= cc <= 30:
-                        raise ValueError("CC score must be between 0 and 30")
+                    if cc > 20:
+                        raise ValueError(f"CC score cannot exceed 20 (entered: {cc})")
+                    if not 0 <= cc <= 20:
+                        raise ValueError("CC score must be between 0 and 20")
                     grade.cc_score = cc
+                
+                # Validate and set Attendance score (max 10)
+                if attendance_val:
+                    attendance = float(attendance_val)
+                    if attendance > 10:
+                        raise ValueError(f"Attendance score cannot exceed 10 (entered: {attendance})")
+                    if not 0 <= attendance <= 10:
+                        raise ValueError("Attendance score must be between 0 and 10")
+                    grade.attendance_score = attendance
+                else:
+                    # Default attendance to 0 if not provided
+                    grade.attendance_score = 0
+                
+                # Validate and set SN score (max 70)
                 if sn_val:
                     sn = float(sn_val)
+                    if sn > 70:
+                        raise ValueError(f"SN score cannot exceed 70 (entered: {sn})")
                     if not 0 <= sn <= 70:
                         raise ValueError("SN score must be between 0 and 70")
                     grade.sn_score = sn
+                
+                # Calculate final score and letter grade
                 grade.calculate_final()
                 grade.save()
             except ValueError as e:
@@ -631,3 +783,66 @@ def registra_decoded_results(request, course_id):
         'course': course,
         'enrollments': enrollments,
     })
+
+
+# ─── ADMIN ACTIVITY LOG VIEW ──────────────────────────────────────────────────
+
+@login_required
+@role_required(['admin'])
+def activity_log(request):
+    """
+    Display comprehensive audit log of all system activities for admin review.
+    Shows who did what, when, and their IP address.
+    """
+    # Get filters from request
+    action_filter = request.GET.get('action', '')
+    user_filter = request.GET.get('user', '')
+    query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '')
+
+    # Start with all logs, ordered by most recent first
+    logs = ActivityLog.objects.all().order_by('-timestamp').select_related('user')
+
+    # Apply filters
+    if action_filter:
+        logs = logs.filter(action=action_filter)
+
+    if user_filter:
+        logs = logs.filter(user__id=user_filter)
+
+    if query:
+        logs = logs.filter(
+            Q(description__icontains=query) |
+            Q(affected_entity__icontains=query) |
+            Q(user__username__icontains=query) |
+            Q(user__email__icontains=query)
+        )
+
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+
+    # Get all users for dropdown filter
+    users = CustomUser.objects.filter(is_active=True).order_by('first_name', 'last_name')
+
+    # Paginate logs (50 per page)
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    # Get action choices for filter
+    action_choices = ActivityLog._meta.get_field('action').choices
+
+    context = {
+        'page_obj': page_obj,
+        'logs': page_obj.object_list,
+        'action_filter': action_filter,
+        'user_filter': user_filter,
+        'query': query,
+        'status_filter': status_filter,
+        'users': users,
+        'action_choices': action_choices,
+        'total_logs': paginator.count,
+    }
+
+    return render(request, 'admin_panel/activity_log.html', context)

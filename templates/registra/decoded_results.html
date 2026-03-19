@@ -198,10 +198,12 @@
           <th style="width:25%;">Name</th>
           <th style="width:15%;">Matricule</th>
           <th style="width:20%;">Email</th>
-          <th style="width:10%;">CA/30</th>
-          <th style="width:10%;">Final/70</th>
+          <th style="width:8%;">Att<small>/10</small></th>
+          <th style="width:8%;">CC<small>/20</small></th>
+          <th style="width:8%;">SN<small>/70</small></th>
+          <th style="width:10%;">Final<small>/100</small></th>
           <th style="width:10%;">Status</th>
-          <th style="width:10%;">Grade</th>
+          <th style="width:8%;">Grade</th>
         </tr>
       </thead>
       <tbody>
@@ -222,6 +224,15 @@
           </td>
           <td>
             <div class="score-cell">
+              {% if enrollment.grade.attendance_score is not None %}
+                {{ enrollment.grade.attendance_score }}
+              {% else %}
+                <span class="score-empty">—</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="score-cell">
               {% if enrollment.grade.cc_score is not None %}
                 {{ enrollment.grade.cc_score }}
               {% else %}
@@ -239,6 +250,15 @@
             </div>
           </td>
           <td>
+            <div class="score-cell">
+              {% if enrollment.grade.final_score is not None %}
+                {{ enrollment.grade.final_score }}
+              {% else %}
+                <span class="score-empty">—</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
             {% if enrollment.remarks == 'PASS' %}
               <span class="status-pass">✓ PASS</span>
             {% elif enrollment.remarks == 'FAIL' %}
@@ -249,8 +269,8 @@
           </td>
           <td>
             <div class="score-cell">
-              {% if enrollment.grade.score is not None %}
-                {{ enrollment.grade.score }}
+              {% if enrollment.grade.letter_grade %}
+                <strong>{{ enrollment.grade.letter_grade }}</strong>
               {% else %}
                 <span class="score-empty">—</span>
               {% endif %}
@@ -259,7 +279,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="7" style="text-align:center; padding:2rem; color:#9CA3AF;">
+          <td colspan="8" style="text-align:center; padding:2rem; color:#9CA3AF;">
             <span style="font-size:2rem; display:block; margin-bottom:0.5rem;">📄</span>
             No results available.
           </td>

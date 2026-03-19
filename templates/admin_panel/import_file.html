@@ -4,7 +4,7 @@
 {% block page_title %}Import <span class="highlight">Enrollment File</span>{% endblock %}
 
 {% block content %}
-<div style="max-width: 700px;">
+<div style="width: 100%; max-width: 100%;">
     <div class="card" style="margin-bottom:2rem;">
         <div class="card-header">
             <h3 class="card-title">Upload Enrollment File</h3>
@@ -33,12 +33,119 @@
                     <div style="color:#6B7280;font-size:0.75rem;margin-top:0.3rem;">📎 Accepted: .csv, .xlsx, .xls — Max size: 10MB</div>
                 </div>
                 <div style="display:flex;gap:1rem;">
-                    <button type="submit" class="btn btn-primary" style="flex:1;" {% if not form.semester.field.queryset.exists %}disabled{% endif %}>📤 Import File</button>
+                    <button type="submit" name="preview_import" class="btn btn-primary" style="flex:1;" {% if not form.semester.field.queryset.exists %}disabled{% endif %}>🔎 Preview File</button>
                     <a href="{% url 'admin_dashboard' %}" class="btn btn-outline" style="flex:1;">Cancel</a>
                 </div>
             </form>
+
+            {% if preview_data %}
+            <div style="margin-top:1rem;padding:0.9rem 1rem;border:1px solid #bfdbfe;background:#eff6ff;border-radius:10px;font-size:0.85rem;color:#1e3a8a;">
+                Preview ready for <strong>{{ preview_data.file_name }}</strong>.
+                Total rows: <strong>{{ preview_data.total_rows }}</strong> | Courses found: <strong>{{ preview_data.total_courses }}</strong>
+            </div>
+            <form method="post" style="display:flex;gap:1rem;margin-top:0.9rem;">
+                {% csrf_token %}
+                <button type="submit" name="confirm_import" class="btn btn-primary" style="flex:1;">✅ Validate & Import</button>
+                <button type="submit" name="cancel_preview" class="btn btn-outline" style="flex:1;">Cancel Preview</button>
+            </form>
+            {% endif %}
         </div>
     </div>
+
+    {% if preview_data %}
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header">
+            <h3 class="card-title">Course Details (Expandable)</h3>
+        </div>
+        <div style="padding:1rem 1.25rem;display:grid;gap:0.75rem;">
+            {% for c in preview_data.course_details %}
+            <details style="border:1px solid #E5E7EB;border-radius:10px;background:#fff;">
+                <summary style="cursor:pointer;list-style:none;padding:0.75rem 1rem;font-size:0.84rem;font-weight:700;color:#0F1C2E;display:flex;justify-content:space-between;align-items:center;gap:1rem;">
+                    <span>{{ c.course_code }} — {{ c.course_name }}</span>
+                    <span style="font-size:0.75rem;color:#6B7280;">{{ c.student_count }} student(s), {{ c.total_rows }} row(s)</span>
+                </summary>
+                <div style="padding:0.5rem 1rem 1rem;overflow-x:auto;">
+                    <table class="data-table" style="margin-top:0.3rem;">
+                        <thead>
+                            <tr>
+                                <th>Row</th>
+                                <th>Matricule</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in c.rows %}
+                            <tr>
+                                <td>{{ r.row_num }}</td>
+                                <td>{{ r.matricule }}</td>
+                                <td>{{ r.first_name }}</td>
+                                <td>{{ r.last_name }}</td>
+                                <td>{{ r.email|default:'—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if c.has_more %}
+                    <div style="margin-top:0.5rem;font-size:0.75rem;color:#6B7280;">
+                        Showing first {{ c.rows_shown }} rows for this course.
+                    </div>
+                    {% endif %}
+                </div>
+            </details>
+            {% empty %}
+            <div style="font-size:0.82rem;color:#6B7280;">No detailed course breakdown available.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom:2rem;">
+        <details open>
+            <summary style="cursor:pointer;list-style:none;padding:1rem 1.25rem;font-size:0.9rem;font-weight:700;color:#0F1C2E;display:flex;justify-content:space-between;align-items:center;">
+                <span>Preview Rows (First {{ preview_data.preview_rows|length }})</span>
+                <span style="font-size:0.75rem;color:#6B7280;">Click to collapse/expand</span>
+            </summary>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Row</th>
+                            <th>Matricule</th>
+                            <th>First Name</th>
+                            <th>Last Name</th>
+                            <th>Email</th>
+                            <th>Course Code</th>
+                            <th>Course Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in preview_data.preview_rows %}
+                        <tr>
+                            <td>{{ r.row_num }}</td>
+                            <td>{{ r.matricule }}</td>
+                            <td>{{ r.first_name }}</td>
+                            <td>{{ r.last_name }}</td>
+                            <td>{{ r.email|default:'—' }}</td>
+                            <td>{{ r.course_code }}</td>
+                            <td>{{ r.course_name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
+    </div>
+
+    {% if preview_data.errors %}
+    <div class="card" style="margin-bottom:2rem;border:1px solid #fecaca;">
+        <div class="card-header">
+            <h3 class="card-title" style="color:#b91c1c;">Preview Warnings</h3>
+        </div>
+        <div style="padding:1rem 1.25rem;color:#7f1d1d;font-size:0.82rem;white-space:pre-wrap;">{{ preview_data.errors|join:'\n' }}</div>
+    </div>
+    {% endif %}
+    {% endif %}
 
     <div class="card">
         <div class="card-header">

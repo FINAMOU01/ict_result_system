@@ -749,7 +749,8 @@
             <!-- Subtitle -->
             <p class="subtitle">Enter your credentials to access the system</p>
 
-            <!-- Messages -->
+            <!-- Messages (HIDDEN - Notifications moved to admin activity log) -->
+            {% comment %}
             {% if messages %}
                 {% for message in messages %}
                 <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
@@ -757,22 +758,7 @@
                 </div>
                 {% endfor %}
             {% endif %}
-
-            <!-- Role selector tabs -->
-            <div class="role-tabs">
-                <button type="button" class="role-tab active" data-role="registra">
-                    <span class="role-tab-emoji">🎓</span>
-                    <span>Registra</span>
-                </button>
-                <button type="button" class="role-tab" data-role="professor">
-                    <span class="role-tab-emoji">👨‍🏫</span>
-                    <span>Professor</span>
-                </button>
-                <button type="button" class="role-tab" data-role="admin">
-                    <span class="role-tab-emoji">⚙️</span>
-                    <span>Admin</span>
-                </button>
-            </div>
+            {% endcomment %}
 
             <!-- Form -->
             <form method="post">
@@ -842,15 +828,5 @@
         <div class="version-tag">v2.0 · 2026</div>
     </div>
 
-    <script>
-        // Role tab switching
-        const roleTabs = document.querySelectorAll('.role-tab');
-        roleTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                roleTabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
-    </script>
 </body>
 </html>
