@@ -61,6 +61,37 @@
     </div>
 </div>
 
+<div class="card" style="margin-top:1rem;border:1px solid #FECACA;">
+    <div class="card-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">
+        <h3 class="card-title" style="color:#991B1B;">Reset Demo Data</h3>
+    </div>
+    <div style="padding:1rem 1.5rem;">
+        <p style="font-size:0.82rem;color:#7F1D1D;margin-bottom:0.8rem;">
+            This will delete students, courses, enrollments, grades, and import history so you can present from an empty state.
+            User accounts and semesters are kept.
+        </p>
+        <form method="post" action="{% url 'reset_demo_data' %}" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+            {% csrf_token %}
+            <input
+                type="text"
+                name="confirm_reset"
+                class="form-control"
+                placeholder="Type RESET to confirm"
+                style="max-width:220px;"
+                required
+            >
+            <button
+                type="submit"
+                class="btn"
+                style="background:#DC2626;color:#fff;border:none;"
+                onclick="return confirm('Are you sure? This will wipe demo data and cannot be undone.');"
+            >
+                Delete All Demo Data
+            </button>
+        </form>
+    </div>
+</div>
+
 <style>
         /* Stat cards grid */
         .stat-grid {

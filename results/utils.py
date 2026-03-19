@@ -177,33 +177,40 @@ def generate_coding_sheet(course):
 
 
 def generate_results_csv(course):
-    """Generate decoded results as CSV bytes."""
+    """
+    Generate decoded results as CSV bytes.
+    Columns: Name | ID Number | First Name | Last Name | Email Address | 
+    Attendance/10 | CC/20 | SN/70 | Final/100 | Letter Grade | Course Name | Semester
+    """
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow([
         'Name', 'ID Number', 'First Name', 'Last Name', 'Email Address',
-        'Attendance/10', 'Assignment/20', 'CA/30', 'Final/70', 'Course Name', 'Semester'
+        'Attendance / 10', 'CC / 20', 'SN / 70', 'Final / 100', 'Letter Grade', 'Course Name', 'Semester'
     ])
 
     enrollments = course.enrollments.select_related('student', 'grade').order_by('student__last_name', 'student__first_name')
     for enrollment in enrollments:
         grade = getattr(enrollment, 'grade', None)
-        ca = float(grade.cc_score) if grade and grade.cc_score is not None else ''
-        final_sn = float(grade.sn_score) if grade and grade.sn_score is not None else ''
-        student_name = enrollment.student.full_name()
-        if enrollment.student.is_walkin:
-            student_name = f"{student_name} (Walk-in)"
+        
+        # Extract grade components
+        attendance = float(grade.attendance_score) if grade and grade.attendance_score is not None else ''
+        cc = float(grade.cc_score) if grade and grade.cc_score is not None else ''
+        sn = float(grade.sn_score) if grade and grade.sn_score is not None else ''
+        final_score = float(grade.final_score) if grade and grade.final_score is not None else ''
+        letter_grade = grade.letter_grade if grade and grade.letter_grade else ''
 
         writer.writerow([
-            student_name,
+            enrollment.student.matricule,
             enrollment.student.matricule,
             enrollment.student.first_name,
             enrollment.student.last_name,
             enrollment.student.email if enrollment.student.email else '',
-            '',
-            '',
-            ca,
-            final_sn,
+            attendance,
+            cc,
+            sn,
+            final_score,
+            letter_grade,
             f"{course.code} {course.name}",
             course.semester.name,
         ])

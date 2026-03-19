@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Count, Q
 from .models import Semester, Course, Student, Enrollment, ImportLog, AdmittedStudent
 from .forms import SemesterForm, ImportFileForm, AssignProfessorForm
@@ -52,10 +53,37 @@ def admin_dashboard(request):
 
 @login_required
 @role_required(['admin'])
+def reset_demo_data(request):
+    """Wipe operational academic data for demo restart (admin only)."""
+    if request.method != 'POST':
+        messages.error(request, "Invalid request method.")
+        return redirect('admin_dashboard')
+
+    confirm_text = request.POST.get('confirm_reset', '').strip()
+    if confirm_text != 'RESET':
+        messages.error(request, "Reset cancelled. Type RESET to confirm.")
+        return redirect('admin_dashboard')
+
+    with transaction.atomic():
+        # Delete dependent/operational data first; keep users and semesters for quick re-import demos.
+        Grade.objects.all().delete()
+        Enrollment.objects.all().delete()
+        Course.objects.all().delete()
+        Student.objects.all().delete()
+        ImportLog.objects.all().delete()
+
+        request.session.pop('import_preview', None)
+
+    messages.success(request, "Demo data reset successfully. You can now import CSV from scratch.")
+    return redirect('admin_dashboard')
+
+
+@login_required
+@role_required(['admin'])
 def semester_list(request):
     semesters = Semester.objects.annotate(
-        course_count=Count('courses'),
-        enrollment_count=Count('enrollments')
+        course_count=Count('courses', distinct=True),
+        enrollment_count=Count('enrollments', distinct=True)
     ).order_by('-created_at')
     form = SemesterForm()
     if request.method == 'POST':
@@ -164,7 +192,7 @@ def course_list(request):
     selected_semester = None
 
     courses = Course.objects.select_related('professor', 'semester').annotate(
-        student_count=Count('enrollments')
+        student_count=Count('enrollments', distinct=True)
     )
     if semester_id:
         courses = courses.filter(semester_id=semester_id)
@@ -228,7 +256,7 @@ def student_list(request):
     query = request.GET.get('q', '')
     level_filter = request.GET.get('level', '')
     students = Student.objects.annotate(
-        enrollment_count=Count('enrollments')
+        enrollment_count=Count('enrollments', distinct=True)
     ).prefetch_related('enrollments__course')
     if query:
         students = students.filter(
@@ -280,7 +308,7 @@ def registra_dashboard(request):
 
     if active_semester:
         courses = Course.objects.filter(semester=active_semester).annotate(
-            student_count=Count('enrollments')
+            student_count=Count('enrollments', distinct=True)
         ).order_by('name')
         courses_coded = courses.filter(is_coded=True).count()
         courses_decoded = courses.filter(is_decoded=True).count()
@@ -329,7 +357,7 @@ def registra_semester_history(request):
     
     for semester in all_semesters:
         courses = Course.objects.filter(semester=semester).annotate(
-            student_count=Count('enrollments')
+            student_count=Count('enrollments', distinct=True)
         ).order_by('name')
         
         # Count graded and decoded for this semester
@@ -598,7 +626,7 @@ def professor_dashboard(request):
         courses = Course.objects.filter(
             professor=request.user,
             semester=active_semester
-        ).annotate(student_count=Count('enrollments')).order_by('name')
+        ).annotate(student_count=Count('enrollments', distinct=True)).order_by('name')
     else:
         courses = Course.objects.none()
     return render(request, 'professor/dashboard.html', {
@@ -626,20 +654,46 @@ def professor_grade_course(request, course_id):
         for enrollment in enrollments:
             cc_key = f'cc_{enrollment.id}'
             sn_key = f'sn_{enrollment.id}'
+            attendance_key = f'attendance_{enrollment.id}'
+            
             cc_val = request.POST.get(cc_key, '').strip()
             sn_val = request.POST.get(sn_key, '').strip()
+            attendance_val = request.POST.get(attendance_key, '').strip()
+            
             try:
                 grade, _ = Grade.objects.get_or_create(enrollment=enrollment)
+                
+                # Validate and set CC score (max 20)
                 if cc_val:
                     cc = float(cc_val)
-                    if not 0 <= cc <= 30:
-                        raise ValueError("CC score must be between 0 and 30")
+                    if cc > 20:
+                        raise ValueError(f"CC score cannot exceed 20 (entered: {cc})")
+                    if not 0 <= cc <= 20:
+                        raise ValueError("CC score must be between 0 and 20")
                     grade.cc_score = cc
+                
+                # Validate and set Attendance score (max 10)
+                if attendance_val:
+                    attendance = float(attendance_val)
+                    if attendance > 10:
+                        raise ValueError(f"Attendance score cannot exceed 10 (entered: {attendance})")
+                    if not 0 <= attendance <= 10:
+                        raise ValueError("Attendance score must be between 0 and 10")
+                    grade.attendance_score = attendance
+                else:
+                    # Default attendance to 0 if not provided
+                    grade.attendance_score = 0
+                
+                # Validate and set SN score (max 70)
                 if sn_val:
                     sn = float(sn_val)
+                    if sn > 70:
+                        raise ValueError(f"SN score cannot exceed 70 (entered: {sn})")
                     if not 0 <= sn <= 70:
                         raise ValueError("SN score must be between 0 and 70")
                     grade.sn_score = sn
+                
+                # Calculate final score and letter grade
                 grade.calculate_final()
                 grade.save()
             except ValueError as e:

@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.dashboard_redirect, name='dashboard'),
     # Admin
     path('admin-panel/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin-panel/reset-demo-data/', views.reset_demo_data, name='reset_demo_data'),
     path('admin-panel/activity-log/', views.activity_log, name='activity_log'),
     path('admin-panel/semesters/', views.semester_list, name='semester_list'),
     path('admin-panel/semesters/<int:semester_id>/edit/', views.semester_edit, name='semester_edit'),
