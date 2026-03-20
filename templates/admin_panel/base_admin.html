@@ -636,7 +636,11 @@
             <div class="nav-label" style="margin-top:1rem;">Management</div>
             <a href="{% url 'import_file' %}" class="nav-item {% if request.resolver_match.url_name == 'import_file' %}active{% endif %}">
                 <div class="nav-icon">📤</div>
-                <span class="nav-text">Import Data</span>
+                <span class="nav-text">Upload Enrollment</span>
+            </a>
+            <a href="{% url 'select_semester_for_import' %}" class="nav-item {% if request.resolver_match.url_name == 'select_semester_for_import' or request.resolver_match.url_name == 'import_admitted_students' %}active{% endif %}">
+                <div class="nav-icon">📚</div>
+                <span class="nav-text">Import Admitted</span>
             </a>
             <a href="{% url 'course_list' %}" class="nav-item">
                 <div class="nav-icon">👨‍🏫</div>

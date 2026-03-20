@@ -7,19 +7,19 @@
   <form method="get" style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
     <div style="flex:1;min-width:220px;">
       <label style="display:block;font-size:0.75rem;color:#6B7280;margin-bottom:0.35rem;">Search</label>
-      <input type="text" name="q" value="{{ query }}" placeholder="Matricule or name" style="width:100%;padding:0.65rem;border:1px solid #d1d5db;border-radius:8px;">
+      <input type="text" name="q" value="{{ query }}" placeholder="Matricule, name, or email" style="width:100%;padding:0.65rem;border:1px solid #d1d5db;border-radius:8px;">
     </div>
     <div style="min-width:220px;">
-      <label style="display:block;font-size:0.75rem;color:#6B7280;margin-bottom:0.35rem;">Academic Year</label>
-      <select name="admitted_year" style="width:100%;padding:0.65rem;border:1px solid #d1d5db;border-radius:8px;">
-        <option value="">All</option>
-        {% for year in admitted_year_choices %}
-        <option value="{{ year }}" {% if selected_admitted_year == year %}selected{% endif %}>{{ year }}</option>
+      <label style="display:block;font-size:0.75rem;color:#6B7280;margin-bottom:0.35rem;">Semester</label>
+      <select name="semester" style="width:100%;padding:0.65rem;border:1px solid #d1d5db;border-radius:8px;">
+        <option value="">All Semesters</option>
+        {% for sem in semesters %}
+        <option value="{{ sem.id }}" {% if selected_semester_id|stringformat:"s" == sem.id|stringformat:"s" %}selected{% endif %}>{{ sem.name }} ({{ sem.academic_year }})</option>
         {% endfor %}
       </select>
     </div>
     <button type="submit" class="btn btn-primary">Filter</button>
-    {% if query or selected_admitted_year %}
+    {% if query or selected_semester_id %}
     {% if request.user.role == 'admin' %}
     <a href="{% url 'admissions_registry_admin' %}" class="btn btn-outline">Clear</a>
     {% else %}
@@ -37,23 +37,31 @@
         <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">First Name</th>
         <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Last Name</th>
         <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Email</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Program</th>
         <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Level</th>
-        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Academic Year</th>
+        <th style="padding:0.75rem;border-bottom:1px solid #e5e7eb;">Semester</th>
       </tr>
     </thead>
     <tbody>
       {% for s in students %}
       <tr>
-        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.matricule }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;"><strong>{{ s.matricule }}</strong></td>
         <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.first_name }}</td>
         <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.last_name }}</td>
-        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.email }}</td>
-        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.get_level_display }}</td>
-        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">{{ s.admitted_year }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;font-size:0.85rem;">{{ s.email|default:"—" }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;font-size:0.85rem;">{{ s.program|default:"—" }}</td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;">
+          {% if s.level %}
+            <span style="background:#EEF4FF;color:#4338CA;padding:0.2rem 0.6rem;border-radius:4px;font-size:0.75rem;font-weight:600;">{{ s.get_level_display }}</span>
+          {% else %}
+            <span style="color:#9CA3AF;">—</span>
+          {% endif %}
+        </td>
+        <td style="padding:0.75rem;border-bottom:1px solid #f3f4f6;font-size:0.85rem;">{{ s.semester.name }}</td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="6" style="padding:1rem;text-align:center;color:#6B7280;">No admitted students found.</td>
+        <td colspan="7" style="padding:1rem;text-align:center;color:#6B7280;">No admitted students found.</td>
       </tr>
       {% endfor %}
     </tbody>

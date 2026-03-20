@@ -1,0 +1,146 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Import Admitted Students - {{ semester.name }}{% endblock %}
+{% block page_title %}Import <span class="highlight">Admitted Students</span>{% endblock %}
+
+{% block content %}
+<div style="width: 100%; max-width: 100%;">
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title">📚 {{ semester.name }} ({{ semester.academic_year }})</h3>
+        </div>
+        <div style="padding: 2rem;">
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'error' %}
+                        <div style="padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA;">
+                            {{ message }}
+                        </div>
+                    {% elif message.tags == 'success' %}
+                        <div style="padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;">
+                            {{ message }}
+                        </div>
+                    {% elif message.tags == 'warning' %}
+                        <div style="padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: #FFFBEB; color: #92400E; border: 1px solid #FCD34D;">
+                            {{ message }}
+                        </div>
+                    {% else %}
+                        <div style="padding: 1rem; border-radius: 8px; margin-bottom: 1rem; background: #EFF6FF; color: #1E40AF; border: 1px solid #BFDBFE;">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                {% csrf_token %}
+                
+                <!-- File Upload Section -->
+                <div style="background: #F8FAFF; border: 2px dashed #1A4A8A; border-radius: 12px; padding: 2rem; text-align: center; transition: all 0.2s;">
+                    <div style="font-size: 2.5rem; margin-bottom: 1rem;">📁</div>
+                    <label for="file" style="display: block;">
+                        <span style="font-size: 0.9rem; color: #1A4A8A; font-weight: 600; cursor: pointer; display: inline-block;">
+                            Click to Select File or Drag & Drop
+                        </span>
+                    </label>
+                    <input 
+                        type="file" 
+                        id="file" 
+                        name="file"
+                        accept=".csv,.xlsx,.xls"
+                        required
+                        style="display: none;"
+                        onchange="updateFileName(this)"
+                    >
+                    <div id="file-name" style="font-size: 0.85rem; color: #6B7280; margin-top: 0.75rem;">No file selected</div>
+                    <div style="font-size: 0.75rem; color: #94A3B8; margin-top: 0.5rem;">
+                        CSV (.csv), Excel (.xlsx, .xls) — Max 10MB
+                    </div>
+                </div>
+
+                <!-- Expected Columns Info -->
+                <div style="background: #FFFBEB; border: 1px solid #FED7AA; border-radius: 8px; padding: 1rem;">
+                    <strong style="color: #C2410C; display: block; margin-bottom: 0.75rem;">📋 Expected Columns</strong>
+                    <div style="font-size: 0.85rem; color: #9A3412; line-height: 1.6;">
+                        <div style="margin-bottom: 0.5rem;"><strong>Required:</strong> <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">matricule</code>, <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">first_name</code>, <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">last_name</code></div>
+                        <div><strong>Optional:</strong> <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">email</code>, <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">program</code>, <code style="background: rgba(0,0,0,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">level</code></div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.8rem;">
+                        ✅ Import File
+                    </button>
+                    <a href="{% url 'select_semester_for_import' %}" class="btn btn-outline" style="flex: 1; padding: 0.8rem;">
+                        ⬅ Back to Semesters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Info Box -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">💡 Tips & Guidelines</h3>
+        </div>
+        <div style="padding: 1.5rem; color: #6B7280; font-size: 0.85rem; line-height: 1.8;">
+            <ul style="margin-left: 1.5rem; margin-bottom: 0;">
+                <li>Duplicate matricules in the same semester will be <strong>updated</strong> (not duplicated)</li>
+                <li>Email must be unique per student (optional field)</li>
+                <li>Level values: <code style="background: #F3F4F6; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">bachelor</code>, <code style="background: #F3F4F6; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">master</code>, <code style="background: #F3F4F6; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">phd</code></li>
+                <li>First import may take a moment — please be patient</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateFileName(input) {
+    const fileName = document.getElementById('file-name');
+    if (input.files && input.files[0]) {
+        fileName.textContent = '✅ ' + input.files[0].name + ' (' + (input.files[0].size / 1024 / 1024).toFixed(2) + ' MB)';
+        fileName.style.color = '#059669';
+    }
+}
+
+// Drag and drop
+const fileInput = document.getElementById('file');
+const dropZone = fileInput.parentElement;
+
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => {
+        dropZone.style.background = '#EFF6FF';
+        dropZone.style.borderColor = '#0C4A6E';
+    });
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => {
+        dropZone.style.background = '#F8FAFF';
+        dropZone.style.borderColor = '#1A4A8A';
+    });
+});
+
+dropZone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    fileInput.files = files;
+    updateFileName(fileInput);
+});
+
+dropZone.addEventListener('click', () => {
+    fileInput.click();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}Import Admitted Students - Select Semester{% endblock %}
+{% block page_title %}Import <span class="highlight">Admitted Students</span>{% endblock %}
+
+{% block content %}
+<div style="width: 100%; max-width: 100%;">
+    <div class="card" style="margin-bottom:2rem;">
+        <div class="card-header">
+            <h3 class="card-title">Select Semester for Import</h3>
+        </div>
+        <div style="padding: 2rem;">
+            <p style="color: #6B7280; margin-bottom: 1.5rem; font-size: 0.9rem;">
+                Choose a semester to import the list of admitted students. Each semester can have its own admitted student roster.
+            </p>
+
+            {% if semesters %}
+            <div style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));">
+                {% for semester in semesters %}
+                <div style="background: white; border: 1px solid #EEF2F8; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <h4 style="font-size: 1rem; font-weight: 700; color: #0F1C2E; margin-bottom: 0.25rem;">
+                                {{ semester.name }}
+                            </h4>
+                            <p style="font-size: 0.85rem; color: #6B7280;">
+                                {{ semester.academic_year }}
+                            </p>
+                        </div>
+                        {% if semester.is_active %}
+                        <span style="background: #ECFDF5; color: #065F46; padding: 0.3rem 0.7rem; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">
+                            Active
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div style="padding: 1rem; background: #F8FAFF; border-radius: 8px; margin-bottom: 1rem; font-size: 0.85rem; color: #6B7280;">
+                        <strong style="color: #0F1C2E;">{{ semester.admitted_students.count }}</strong> students imported
+                    </div>
+
+                    <a href="{% url 'import_admitted_students' semester.id %}" class="btn btn-primary" style="width: 100%; text-align: center;">
+                        📥 Import List for {{ semester.name }}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 3rem 2rem; color: #6B7280; background: #F8FAFF; border-radius: 12px;">
+                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📅</div>
+                <p>No semesters found. Please create a semester first.</p>
+                <a href="{% url 'semester_list' %}" class="btn btn-primary" style="margin-top: 1rem;">Create Semester</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Import Process</h3>
+        </div>
+        <div style="padding: 1.5rem; color: #6B7280; font-size: 0.85rem; line-height: 1.6;">
+            <ol style="margin-left: 1.5rem;">
+                <li style="margin-bottom: 0.75rem;">Select a semester above</li>
+                <li style="margin-bottom: 0.75rem;">Upload a CSV or Excel file with admitted student data</li>
+                <li style="margin-bottom: 0.75rem;">Expected columns: <code style="background: #FFFBEB; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">matricule</code>, <code style="background: #FFFBEB; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">first_name</code>, <code style="background: #FFFBEB; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">last_name</code></li>
+                <li>Optional columns: <code style="background: #FFFBEB; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">email</code>, <code style="background: #FFFBEB; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">program</code>, <code style="background: #FFFBEB; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'JetBrains Mono', monospace;">level</code></li>
+            </ol>
+            <div style="margin-top: 1rem; padding: 1rem; background: #F3F4F6; border-radius: 8px;">
+                <strong style="color: #374151;">💡 Tip:</strong> Duplicate matricules in the same semester will be <strong>updated</strong> (not duplicated).
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
