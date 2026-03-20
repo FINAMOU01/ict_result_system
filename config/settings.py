@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'accounts',
     'academics',
     'results',
+    'voice_assistant',
 ]
 
 MIDDLEWARE = [

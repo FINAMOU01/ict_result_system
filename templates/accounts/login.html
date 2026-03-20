@@ -828,5 +828,29 @@
         <div class="version-tag">v2.0 · 2026</div>
     </div>
 
+    <!-- Voice Assistant Widget - Native Web Speech API -->
+    <script src="https://cdn.jsdelivr.net/npm/font-awesome@6.0.0/js/all.min.js"></script>
+
+    <!-- Floating Mic Button -->
+    <div id="voice-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 999;">
+        <button id="voice-toggle-btn" 
+                style="width: 60px; height: 60px; border-radius: 50%; background: #007bff; color: white; 
+                        border: none; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        transition: all 0.3s ease;" title="Click to speak (English or French)">
+            <i class="fas fa-microphone"></i>
+        </button>
+        <div id="voice-status" style="position: fixed; bottom: 100px; right: 20px; background: white; 
+                        padding: 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); 
+                        display: none; min-width: 280px; z-index: 1000; max-width: 90vw;">
+            <div style="color: #007bff; font-weight: bold; margin-bottom: 10px; font-size: 14px;">🎤 Voice Commands</div>
+            <div id="voice-text" style="color: #333; font-size: 13px; min-height: 40px; line-height: 1.4;">Click mic to speak...</div>
+            <div style="margin-top: 8px; font-size: 11px; color: #999; border-top: 1px solid #eee; padding-top: 8px;">
+                Try: "Admin Dashboard", "Manage Courses", "Help"
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/voice-annyang.js"></script>
+
 </body>
 </html>
