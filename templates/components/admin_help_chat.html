@@ -1,16 +1,16 @@
 <!-- Admin Help & Guide Chat Widget -->
-<div id="admin-help-btn" class="admin-help-btn" title="Click for help">
+<button id="admin-help-btn" class="admin-help-btn" type="button" title="Click for help">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
     </svg>
-</div>
+</button>
 
 <!-- Help Chat Panel -->
 <div id="admin-help-panel" class="admin-help-panel d-none">
     <!-- Panel Header -->
     <div class="admin-help-header">
         <h4>📚 Admin Guide</h4>
-        <button class="admin-help-close" type="button">
+        <button id="admin-help-close" class="admin-help-close" type="button">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -231,6 +231,8 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 998;
         border: none;
+        padding: 0;
+        margin: 0;
     }
 
     .admin-help-btn:hover {
@@ -252,7 +254,7 @@
         background: white;
         border-radius: 12px;
         box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
-        z-index: 1001;
+        z-index: 990;
         display: flex;
         flex-direction: column;
         animation: slideInLeft 0.3s ease-out;
@@ -534,26 +536,40 @@
 
 <!-- Help Chat JavaScript -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    // Separate namespace to avoid conflicts
+    window.AdminHelpChat = window.AdminHelpChat || {};
+    
+    window.AdminHelpChat.init = function() {
         const helpBtn = document.getElementById('admin-help-btn');
         const helpPanel = document.getElementById('admin-help-panel');
-        const closeBtn = document.querySelector('.admin-help-close');
+        const closeBtn = document.getElementById('admin-help-close');
         const tabBtns = document.querySelectorAll('.help-tab-btn');
         const searchInput = document.getElementById('help-search-input');
 
-        // Toggle panel
-        if (helpBtn && helpPanel) {
-            helpBtn.addEventListener('click', () => {
-                helpPanel.classList.toggle('d-none');
-            });
+        if (!helpBtn || !helpPanel) {
+            console.warn('Admin help elements not found');
+            return;
+        }
 
-            closeBtn.addEventListener('click', () => {
+        // Toggle panel on button click
+        helpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            helpPanel.classList.toggle('d-none');
+        });
+
+        // Close panel on close button click
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 helpPanel.classList.add('d-none');
             });
+        }
 
-            // Tab switching
+        // Tab switching
+        if (tabBtns.length > 0) {
             tabBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     const tabName = btn.getAttribute('data-tab');
                     
                     // Remove active from all buttons and contents
@@ -564,22 +580,32 @@
                     
                     // Add active to clicked button and content
                     btn.classList.add('active');
-                    document.getElementById(tabName + '-tab').classList.add('active');
+                    const tabContent = document.getElementById(tabName + '-tab');
+                    if (tabContent) {
+                        tabContent.classList.add('active');
+                    }
                 });
             });
-
-            // Search functionality
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const query = e.target.value.toLowerCase();
-                    const items = document.querySelectorAll('.help-item');
-                    
-                    items.forEach(item => {
-                        const text = item.textContent.toLowerCase();
-                        item.style.display = text.includes(query) ? 'block' : 'none';
-                    });
-                });
-            }
         }
-    });
+
+        // Search functionality
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const items = document.querySelectorAll('.help-item');
+                
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    item.style.display = text.includes(query) ? 'block' : 'none';
+                });
+            });
+        }
+    };
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.AdminHelpChat.init);
+    } else {
+        window.AdminHelpChat.init();
+    }
 </script>

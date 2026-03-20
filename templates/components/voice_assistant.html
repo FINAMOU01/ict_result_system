@@ -20,7 +20,7 @@
             <h5>🎤 Voice Assistant</h5>
             <p class="voice-header-subtitle">English or French</p>
         </div>
-        <button type="button" class="voice-close-btn" title="Close">
+        <button id="voice-close-btn" type="button" class="voice-close-btn" title="Close">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
                 <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -346,14 +346,268 @@
 
 <!-- Voice Panel Control -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const voiceCloseBtn = document.querySelector('.voice-close-btn');
+    window.VoicePanelControl = window.VoicePanelControl || {};
+    
+    window.VoicePanelControl.init = function() {
+        const voiceCloseBtn = document.getElementById('voice-close-btn');
+        if (!voiceCloseBtn) {
+            voiceCloseBtn = document.querySelector('.voice-close-btn');
+        }
         const voicePanel = document.getElementById('voice-panel');
         
         if (voiceCloseBtn && voicePanel) {
-            voiceCloseBtn.addEventListener('click', () => {
+            voiceCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 voicePanel.classList.add('d-none');
             });
         }
-    });
+    };
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.VoicePanelControl.init);
+    } else {
+        window.VoicePanelControl.init();
+    }
 </script>
+
+<!-- Technical Loading Screen Overlay -->
+<div id="tech-loading-screen" class="tech-loading-screen d-none">
+    <div class="tech-screen-content">
+        <!-- Header -->
+        <div class="tech-header">
+            <div class="tech-header-title">
+                <span class="tech-prompt">❯❯❯</span>
+                <span class="tech-text">SYSTEM INITIALIZATION</span>
+                <span class="tech-blink">_</span>
+            </div>
+        </div>
+        
+        <!-- Technical Info -->
+        <div class="tech-body">
+            <div class="tech-info-block">
+                <div class="tech-line">
+                    <span class="tech-label">[✓] TIMESTAMP:</span>
+                    <span class="tech-value" id="tech-timestamp">2026-03-20 12:00:00</span>
+                </div>
+                <div class="tech-line">
+                    <span class="tech-label">[✓] REQUEST_URL:</span>
+                    <span class="tech-value" id="tech-url">/admin-panel/</span>
+                </div>
+                <div class="tech-line">
+                    <span class="tech-label">[✓] PAGE_TITLE:</span>
+                    <span class="tech-value" id="tech-title">Dashboard</span>
+                </div>
+                <div class="tech-line">
+                    <span class="tech-label">[✓] ENV_MODE:</span>
+                    <span class="tech-value">DEVELOPMENT</span>
+                </div>
+                <div class="tech-line">
+                    <span class="tech-label">[✓] USER_AGENT:</span>
+                    <span class="tech-value" id="tech-agent">Chrome</span>
+                </div>
+                <div class="tech-line">
+                    <span class="tech-label">[✓] PROCESS:</span>
+                    <span class="tech-value" id="tech-process">Navigation In Progress</span>
+                </div>
+            </div>
+            
+            <!-- Loading Progress -->
+            <div class="tech-loading-bar">
+                <div class="tech-progress"></div>
+            </div>
+            
+            <!-- Status Message -->
+            <div class="tech-status">
+                <span class="tech-status-icon">⚙️</span>
+                <span id="tech-status-text">Initializing system modules...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Technical Loading Screen Styles */
+.tech-loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0a0e27 0%, #16213e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    font-family: 'Courier New', 'Segoe UI Mono', monospace;
+}
+
+.tech-screen-content {
+    width: 90%;
+    max-width: 800px;
+    background: rgba(20, 25, 50, 0.95);
+    border: 2px solid #00ff41;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.3),
+                0 0 60px rgba(0, 255, 65, 0.1),
+                inset 0 0 20px rgba(0, 255, 65, 0.05);
+    backdrop-filter: blur(10px);
+}
+
+.tech-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+}
+
+.tech-header-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #00ff41;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tech-prompt {
+    color: #00ff41;
+    font-weight: bold;
+}
+
+.tech-text {
+    text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+}
+
+.tech-blink {
+    animation: blink 1s infinite;
+    color: #00ff41;
+}
+
+@keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+}
+
+.tech-body {
+    margin: 20px 0;
+}
+
+.tech-info-block {
+    margin: 15px 0;
+}
+
+.tech-line {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 15px;
+    padding: 8px 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #00ff41;
+    animation: slideIn 0.5s ease-out forwards;
+    opacity: 0;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.tech-line:nth-child(1) { animation-delay: 0.1s; }
+.tech-line:nth-child(2) { animation-delay: 0.2s; }
+.tech-line:nth-child(3) { animation-delay: 0.3s; }
+.tech-line:nth-child(4) { animation-delay: 0.4s; }
+.tech-line:nth-child(5) { animation-delay: 0.5s; }
+.tech-line:nth-child(6) { animation-delay: 0.6s; }
+
+.tech-label {
+    color: #00ff41;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 255, 65, 0.5);
+}
+
+.tech-value {
+    color: #ffffff;
+    background: rgba(0, 255, 65, 0.1);
+    padding: 2px 8px;
+    border-radius: 3px;
+    word-break: break-all;
+}
+
+.tech-loading-bar {
+    height: 6px;
+    background: rgba(0, 255, 65, 0.2);
+    border-radius: 3px;
+    margin: 20px 0 15px 0;
+    overflow: hidden;
+}
+
+.tech-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #00ff41, #00cc33, #00ff41);
+    border-radius: 3px;
+    animation: progress 2s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+}
+
+@keyframes progress {
+    0% { width: 0%; }
+    50% { width: 100%; }
+    100% { width: 100%; }
+}
+
+.tech-status {
+    text-align: center;
+    color: #00ff41;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.tech-status-icon {
+    animation: rotate 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.d-none {
+    display: none !important;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .tech-screen-content {
+        padding: 20px;
+        max-width: 95%;
+    }
+    
+    .tech-header-title {
+        font-size: 14px;
+    }
+    
+    .tech-line {
+        grid-template-columns: 140px 1fr;
+        font-size: 12px;
+    }
+}
+</style>
