@@ -3,8 +3,8 @@ from .models import Semester, Course, Student, Enrollment, ImportLog, AdmittedSt
 
 @admin.register(AdmittedStudent)
 class AdmittedStudentAdmin(admin.ModelAdmin):
-    list_display = ['matricule', 'last_name', 'first_name', 'email', 'level', 'admitted_year', 'created_at']
-    list_filter = ['level', 'admitted_year']
+    list_display = ['matricule', 'last_name', 'first_name', 'email', 'level', 'semester', 'created_at']
+    list_filter = ['level', 'semester']
     search_fields = ['matricule', 'last_name', 'first_name', 'email']
     readonly_fields = ['created_at']
 

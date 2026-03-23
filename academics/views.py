@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count, Q
+from django.http import JsonResponse
 from .models import Semester, Course, Student, Enrollment, ImportLog, AdmittedStudent
 from .forms import SemesterForm, ImportFileForm, AssignProfessorForm
 from .utils import import_enrollment_file, build_import_preview, import_enrollment_records
@@ -36,6 +37,7 @@ def dashboard_redirect(request):
 @role_required(['admin'])
 def admin_dashboard(request):
     active_semester = Semester.objects.filter(is_active=True).first()
+    all_semesters = Semester.objects.all().order_by('-created_at')
     stats = {
         'semesters': Semester.objects.count(),
         'students': Student.objects.count(),
@@ -47,6 +49,7 @@ def admin_dashboard(request):
     }
     return render(request, 'admin_panel/dashboard.html', {
         'active_semester': active_semester,
+        'all_semesters': all_semesters,
         'stats': stats,
     })
 
@@ -277,25 +280,27 @@ def student_list(request):
 @role_required(['admin', 'registra'])
 def admissions_registry(request):
     query = request.GET.get('q', '').strip()
-    admitted_year = request.GET.get('admitted_year', '').strip()
+    semester_id = request.GET.get('semester', '').strip()
 
     students = AdmittedStudent.objects.all()
+    semesters = Semester.objects.all().order_by('-created_at')
+    
     if query:
         students = students.filter(
             Q(matricule__icontains=query) |
             Q(last_name__icontains=query) |
-            Q(first_name__icontains=query)
+            Q(first_name__icontains=query) |
+            Q(email__icontains=query)
         )
-    if admitted_year:
-        students = students.filter(admitted_year=admitted_year)
-
-    admitted_year_choices = [choice[0] for choice in AdmittedStudent.ADMITTED_YEAR_CHOICES]
+    
+    if semester_id:
+        students = students.filter(semester_id=semester_id)
 
     return render(request, 'admissions/registry.html', {
-        'students': students.order_by('admitted_year', 'last_name', 'first_name'),
+        'students': students.order_by('-created_at', 'last_name', 'first_name'),
         'query': query,
-        'selected_admitted_year': admitted_year,
-        'admitted_year_choices': admitted_year_choices,
+        'semesters': semesters,
+        'selected_semester_id': semester_id,
     })
 
 
@@ -484,7 +489,14 @@ def add_from_admissions(request, course_id):
             return redirect('add_from_admissions', course_id=course_id)
 
         try:
-            admitted_student = AdmittedStudent.objects.get(matricule=matricule)
+            # Search across all semesters - get the most recent record
+            admitted_student = AdmittedStudent.objects.filter(
+                matricule=matricule
+            ).order_by('-semester__created_at').first()
+            
+            if not admitted_student:
+                messages.error(request, f"No admitted student found with matricule '{matricule}'.")
+                return redirect('add_from_admissions', course_id=course_id)
         except AdmittedStudent.DoesNotExist:
             messages.error(request, f"No admitted student found with matricule '{matricule}'.")
             return redirect('add_from_admissions', course_id=course_id)
@@ -503,8 +515,8 @@ def add_from_admissions(request, course_id):
             defaults={
                 'first_name': admitted_student.first_name,
                 'last_name': admitted_student.last_name,
-                'email': admitted_student.email,
-                'level': admitted_student.level,
+                'email': admitted_student.email or '',
+                'level': admitted_student.level or 'bachelor',
                 'is_walkin': False,
             }
         )
@@ -846,3 +858,210 @@ def activity_log(request):
     }
 
     return render(request, 'admin_panel/activity_log.html', context)
+
+
+# ─── ADMITTED STUDENTS IMPORT & LOOKUP ────────────────────────────────────────
+
+@login_required
+@role_required(['admin'])
+def select_semester_for_import(request):
+    """
+    Admin selects a semester to import admitted students for.
+    Lists all semesters with import links.
+    """
+    semesters = Semester.objects.all().order_by('-created_at')
+    return render(request, 'admin_panel/select_semester_import.html', {
+        'semesters': semesters,
+    })
+
+
+@login_required
+@role_required(['admin'])
+def import_admitted_students(request, semester_id):
+    """
+    Admin imports the full list of admitted students for a semester.
+    Accepts CSV or Excel (.xlsx/.xls).
+    Expected columns: matricule, first_name, last_name, email (optional),
+                      program (optional), level (optional).
+    No duplicates: uses update_or_create on (semester, matricule).
+    """
+    semester = get_object_or_404(Semester, id=semester_id)
+    
+    if request.method == 'GET':
+        return render(request, 'admin_panel/import_admitted_students.html', {
+            'semester': semester,
+        })
+    
+    if request.method == 'POST':
+        if 'file' not in request.FILES:
+            messages.error(request, "No file uploaded.")
+            return render(request, 'admin_panel/import_admitted_students.html', {'semester': semester})
+        
+        uploaded_file = request.FILES['file']
+        
+        try:
+            import pandas as pd
+            
+            # Read file (support CSV and Excel)
+            if uploaded_file.name.endswith('.csv'):
+                df = pd.read_csv(uploaded_file)
+            elif uploaded_file.name.endswith(('.xlsx', '.xls')):
+                df = pd.read_excel(uploaded_file)
+            else:
+                messages.error(request, "File must be CSV or Excel format.")
+                return render(request, 'admin_panel/import_admitted_students.html', {'semester': semester})
+            
+            # Expected columns
+            required_cols = {'matricule', 'first_name', 'last_name'}
+            optional_cols = {'email', 'program', 'level'}
+            
+            df_cols = set(df.columns)
+            
+            if not required_cols.issubset(df_cols):
+                messages.error(request, f"Missing required columns: {', '.join(required_cols - df_cols)}")
+                return render(request, 'admin_panel/import_admitted_students.html', {'semester': semester})
+            
+            created_count = 0
+            updated_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                for index, row in df.iterrows():
+                    try:
+                        matricule = str(row['matricule']).strip()
+                        first_name = str(row['first_name']).strip()
+                        last_name = str(row['last_name']).strip()
+                        
+                        if not matricule or not first_name or not last_name:
+                            errors.append(f"Row {index + 2}: Missing required data")
+                            continue
+                        
+                        defaults = {
+                            'first_name': first_name,
+                            'last_name': last_name,
+                            'email': str(row.get('email', '')).strip() if 'email' in df_cols else None,
+                            'program': str(row.get('program', '')).strip() if 'program' in df_cols else None,
+                            'level': str(row.get('level', '')).strip() if 'level' in df_cols and str(row.get('level', '')).strip() in ['bachelor', 'master', 'phd'] else None,
+                        }
+                        
+                        obj, created = AdmittedStudent.objects.update_or_create(
+                            semester=semester,
+                            matricule=matricule,
+                            defaults=defaults
+                        )
+                        
+                        if created:
+                            created_count += 1
+                        else:
+                            updated_count += 1
+                    
+                    except Exception as e:
+                        errors.append(f"Row {index + 2}: {str(e)}")
+            
+            if errors:
+                error_msg = "\n".join(errors[:10])
+                messages.warning(request, f"Import completed with {len(errors)} error(s). First few:\n{error_msg}")
+            
+            messages.success(request, f"✅ Import complete! {created_count} students created, {updated_count} updated.")
+            return redirect('admin_dashboard')
+        
+        except Exception as e:
+            messages.error(request, f"Import failed: {str(e)}")
+            return render(request, 'admin_panel/import_admitted_students.html', {'semester': semester})
+
+
+@login_required
+def lookup_admitted_student(request):
+    """
+    Search across ALL semesters — a student admitted once stays admitted forever.
+    Returns JSON with student details.
+    """
+    matricule = request.GET.get('matricule', '').strip()
+    if not matricule:
+        return JsonResponse({'found': False, 'message': 'Please enter a matricule'})
+    
+    # Search across ALL semesters — take most recent record if duplicates
+    admitted = AdmittedStudent.objects.filter(
+        matricule__iexact=matricule
+    ).order_by('-semester__created_at').first()
+    
+    if admitted:
+        return JsonResponse({
+            'found': True,
+            'matricule': admitted.matricule,
+            'first_name': admitted.first_name,
+            'last_name': admitted.last_name,
+            'email': admitted.email or '',
+            'program': admitted.program or '',
+            'level': admitted.level or '',
+        })
+    else:
+        return JsonResponse({
+            'found': False,
+            'message': f'No student found with matricule "{matricule}" in the system'
+        })
+
+
+@login_required
+@role_required(['registra'])
+def add_student_to_coded_course(request, course_id):
+    """
+    Add a student (from admitted students database) to a coded course.
+    Search across ALL semesters — not just active.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'})
+    
+    import json
+    data = json.loads(request.body)
+    matricule = data.get('matricule', '').strip()
+    
+    # Search across ALL semesters — not just active
+    admitted = AdmittedStudent.objects.filter(
+        matricule__iexact=matricule
+    ).order_by('-semester__created_at').first()
+    
+    if not admitted:
+        return JsonResponse({
+            'success': False,
+            'error': f'Student "{matricule}" not found in the admitted students database'
+        })
+    
+    course = get_object_or_404(Course, id=course_id)
+    
+    # Create Student if not exists — no duplication
+    student, _ = Student.objects.update_or_create(
+        matricule=admitted.matricule,
+        defaults={
+            'first_name': admitted.first_name,
+            'last_name': admitted.last_name,
+            'email': admitted.email or '',
+        }
+    )
+    
+    # Check if already enrolled
+    if Enrollment.objects.filter(student=student, course=course).exists():
+        return JsonResponse({
+            'success': False,
+            'error': f'{student.get_full_name()} is already enrolled in this course'
+        })
+    
+    # Assign next anonymous code
+    last_code = Enrollment.objects.filter(
+        course=course
+    ).aggregate(Count('id'))['id__count'] or 0
+    next_code = last_code + 1
+    
+    Enrollment.objects.create(
+        student=student,
+        course=course,
+        semester=course.semester,
+        anonymous_code=next_code
+    )
+    
+    return JsonResponse({
+        'success': True,
+        'anonymous_code': next_code,
+        'student_name': student.get_full_name(),
+        'matricule': student.matricule,
+    })

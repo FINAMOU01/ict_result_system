@@ -207,6 +207,9 @@
       <a href="{% url 'add_from_admissions' course.id %}" class="btn btn-outline">+ Add From Admissions</a>
       <a href="{% url 'generate_codes' course.id %}" class="btn btn-orange">🔀 Generate Codes</a>
     {% else %}
+      <button type="button" class="btn btn-outline" onclick="document.getElementById('add-student-form').style.display = document.getElementById('add-student-form').style.display === 'none' ? 'block' : 'none';">
+        + Add Student
+      </button>
       <a href="{% url 'download_coding_sheet' course.id %}" class="btn btn-primary">⬇ Download Confidential Sheet</a>
       {% if course.grades_submitted %}
         <a href="{% url 'download_decoded_results' course.id %}" class="btn btn-success">⬇ Download CSV Results</a>
@@ -284,4 +287,114 @@
   </div>
 </div>
 
+<!-- ADD STUDENT FORM (for coded courses) -->
+{% if course.is_coded %}
+<div id="add-student-form" style="display:none; background:#EFF6FF; border:2px solid #1A4A8A; border-radius:12px; padding:1.25rem; margin-bottom:1.25rem; animation:fadeInUp 0.3s ease;">
+  <h5 style="margin-bottom:1rem; color:#0C4A6E; font-weight:700;">Add Student from Admitted List</h5>
+  <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+    <input 
+      type="text" 
+      id="matricule-input" 
+      placeholder="Enter matricule number..."
+      style="padding:0.7rem 1rem; border:1.5px solid #1A4A8A; border-radius:8px; font-size:0.9rem; flex:1; min-width:200px; font-family:'DM Sans',sans-serif; color:#0F1C2E;"
+      onkeypress="if(event.key==='Enter') lookupStudent(event);"
+    >
+    <button type="button" onclick="lookupStudent(event)" class="btn btn-primary">🔍 Search</button>
+  </div>
+  <div id="student-preview" style="margin-top:1rem; padding:0.75rem; background:white; border-radius:8px; display:none; border:1px solid #EEF2F8;"></div>
+  <button 
+    id="confirm-add-btn" 
+    type="button" 
+    onclick="confirmAdd(event)" 
+    style="display:none; margin-top:1rem; padding:0.7rem 1.5rem; background:#059669; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:background 0.2s;"
+    onmouseover="this.style.background='#047857'"
+    onmouseout="this.style.background='#059669'"
+  >
+    ✅ Add to Course
+  </button>
+</div>
+{% endif %}
+
 {% endblock %}
+
+<script>
+function lookupStudent(event) {
+  event.preventDefault();
+  const matricule = document.getElementById('matricule-input').value.trim();
+  
+  if (!matricule) {
+    showStudentPreview('Please enter a matricule', true);
+    return;
+  }
+  
+  fetch(`/registra/lookup-admitted/?matricule=${encodeURIComponent(matricule)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.found) {
+        const preview = `
+          <div style="color:#065F46; font-weight:600;">✅ Student Found</div>
+          <div style="margin-top:0.5rem; font-size:0.9rem;">
+            <strong>${data.first_name} ${data.last_name}</strong><br>
+            <span style="color:#6B7280;">Matricule:</span> ${data.matricule}<br>
+            ${data.program ? '<span style="color:#6B7280;">Program:</span> ' + data.program + '<br>' : ''}
+            ${data.level ? '<span style="color:#6B7280;">Level:</span> ' + data.level : ''}
+          </div>
+        `;
+        showStudentPreview(preview, false);
+        document.getElementById('confirm-add-btn').style.display = 'inline-block';
+      } else {
+        showStudentPreview(data.message, true);
+        document.getElementById('confirm-add-btn').style.display = 'none';
+      }
+    })
+    .catch(err => {
+      showStudentPreview('Error: ' + err.message, true);
+      document.getElementById('confirm-add-btn').style.display = 'none';
+    });
+}
+
+function showStudentPreview(html, isError) {
+  const preview = document.getElementById('student-preview');
+  preview.innerHTML = html;
+  if (isError) {
+    preview.style.color = '#DC2626';
+    preview.style.borderColor = '#FCA5A5';
+    preview.style.background = '#FEF2F2';
+  } else {
+    preview.style.color = '#0F1C2E';
+    preview.style.borderColor = '#DBEAFE';
+    preview.style.background = '#EFF6FF';
+  }
+  preview.style.display = 'block';
+}
+
+function confirmAdd(event) {
+  event.preventDefault();
+  const matricule = document.getElementById('matricule-input').value.trim();
+  const courseId = "{{ course.id }}";
+  
+  fetch(`/registra/courses/${courseId}/add-student/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ matricule })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      // Show success and reload
+      alert(`✅ ${data.student_name} (Code: ${data.anonymous_code}) added successfully!`);
+      location.reload();
+    } else {
+      showStudentPreview('❌ ' + data.error, true);
+      document.getElementById('confirm-add-btn').style.display = 'none';
+    }
+  })
+  .catch(err => {
+    showStudentPreview('❌ Error: ' + err.message, true);
+    document.getElementById('confirm-add-btn').style.display = 'none';
+  });
+}
+</script>
