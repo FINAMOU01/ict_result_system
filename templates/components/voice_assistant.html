@@ -503,6 +503,118 @@
         background: #999;
     }
 
+    /* ============ SYSTEM REPORT PANEL ============ */
+    .system-report-panel {
+        position: fixed;
+        bottom: 85px;
+        left: 20px;
+        width: 380px;
+        max-height: 500px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        animation: slideInUp 0.3s ease-out;
+        overflow: hidden;
+    }
+
+    .report-header {
+        background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+        color: white;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .report-title {
+        font-size: 14px;
+        font-weight: 600;
+        flex: 1;
+    }
+
+    .report-close-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .report-close-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(90deg);
+    }
+
+    .report-body {
+        padding: 16px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .report-content {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .report-loading {
+        text-align: center;
+        padding: 20px;
+        color: #999;
+    }
+
+    .report-stat {
+        background: #f9f9f9;
+        padding: 12px;
+        border-radius: 8px;
+        border-left: 4px solid #f56565;
+    }
+
+    .report-stat-label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .report-stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .report-stat-description {
+        font-size: 11px;
+        color: #999;
+        margin-top: 4px;
+    }
+
+    .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f0f0f0;
+        border-top: 3px solid #f56565;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
     /* ============ RESPONSIVE ============ */
     @media (max-width: 480px) {
         .voice-widget {
@@ -751,6 +863,140 @@
         window.WorkflowManager.init();
     }
 </script>
+
+<!-- System Report Manager -->
+<script>
+    window.SystemReportManager = window.SystemReportManager || {};
+    
+    window.SystemReportManager.showReport = function() {
+        const panel = document.getElementById('system-report-panel');
+        if (panel) {
+            panel.classList.remove('d-none');
+            this.loadSystemStats();
+        }
+    };
+    
+    window.SystemReportManager.loadSystemStats = function() {
+        const contentEl = document.getElementById('report-content');
+        if (!contentEl) return;
+        
+        // Show loading
+        contentEl.innerHTML = '<div class="report-loading"><div class="spinner"></div><p>Loading...</p></div>';
+        
+        // Fetch from API
+        fetch('/voice/report/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    this.displayStats(data.statistics);
+                } else {
+                    contentEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">Error loading report</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading system report:', error);
+                contentEl.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">Error loading report</div>';
+            });
+    };
+    
+    window.SystemReportManager.getPageStats = function() {
+        // Try to get stats from the page (if available)
+        if (window.__systemStats) {
+            return window.__systemStats;
+        }
+        
+        // Or extract from visible elements if present
+        try {
+            const statsElements = document.querySelectorAll('[data-stat-key]');
+            const stats = {};
+            statsElements.forEach(el => {
+                const key = el.getAttribute('data-stat-key');
+                const value = el.textContent.trim();
+                stats[key] = value;
+            });
+            return Object.keys(stats).length > 0 ? stats : null;
+        } catch (e) {
+            return null;
+        }
+    };
+    
+    window.SystemReportManager.displayStats = function(stats) {
+        const contentEl = document.getElementById('report-content');
+        if (!contentEl) return;
+        
+        let html = '';
+        
+        const statDefs = [
+            { key: 'total_semesters', label: 'Total Semesters', icon: '📅' },
+            { key: 'total_students', label: 'Total Students', icon: '👥' },
+            { key: 'total_courses', label: 'Active Courses', icon: '📚' },
+            { key: 'total_professors', label: 'Professors Count', icon: '👨‍🏫' },
+            { key: 'total_enrollments', label: 'Total Enrollments', icon: '📋' },
+            { key: 'pending_assignments', label: 'Pending Assignments', icon: '⏳' },
+            { key: 'grades_submitted', label: 'Grades Submitted', icon: '✅' },
+            { key: 'courses_coded', label: 'Courses Coded', icon: '🔐' },
+            { key: 'courses_decoded', label: 'Courses Decoded', icon: '🔓' },
+            { key: 'active_semester', label: 'Active Semester', icon: '🎓' }
+        ];
+        
+        statDefs.forEach(def => {
+            const value = stats[def.key] !== undefined ? stats[def.key] : '—';
+            html += `
+                <div class="report-stat">
+                    <div class="report-stat-label">${def.icon} ${def.label}</div>
+                    <div class="report-stat-value">${value}</div>
+                </div>
+            `;
+        });
+        
+        if (!html) {
+            html = '<div style="text-align: center; padding: 20px; color: #999;">No data available</div>';
+        }
+        
+        contentEl.innerHTML = html;
+    };
+    
+    window.SystemReportManager.init = function() {
+        const closeBtn = document.getElementById('report-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('system-report-panel').classList.add('d-none');
+            });
+        }
+    };
+    
+    // Initialize
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.SystemReportManager.init);
+    } else {
+        window.SystemReportManager.init();
+    }
+</script>
+
+<!-- System Report Panel -->
+<div id="system-report-panel" class="system-report-panel d-none">
+    <!-- Panel Header -->
+    <div class="report-header">
+        <div class="report-title">📊 System Report</div>
+        <button id="report-close-btn" type="button" class="report-close-btn" title="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+    
+    <!-- Report Content -->
+    <div class="report-body">
+        <div id="report-content" class="report-content">
+            <div class="report-loading">
+                <div class="spinner"></div>
+                <p>Loading system report...</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Technical Loading Screen Overlay -->
 <div id="tech-loading-screen" class="tech-loading-screen d-none">

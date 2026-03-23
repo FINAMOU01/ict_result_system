@@ -3,6 +3,9 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Count, Q
+from academics.models import Semester, Course, Student, Enrollment
+from accounts.models import CustomUser
 
 
 # Language translations
@@ -61,6 +64,11 @@ VOICE_COMMANDS = {
     'manage semesters': {'url': '/admin-panel/semesters/', 'role': 'admin'},
     'activity log': {'url': '/admin-panel/activity-log/', 'role': 'admin'},
     'admissions': {'url': '/admin-panel/admissions/', 'role': 'admin'},
+    'report': {'url': '#report', 'role': 'admin'},  # Special handler for report
+    'statistics': {'url': '#report', 'role': 'admin'},
+    'overview': {'url': '#report', 'role': 'admin'},
+    'rapport': {'url': '#report', 'role': 'admin'},  # French
+    'statistique': {'url': '#report', 'role': 'admin'},  # French
     
     # Registra commands
     'registra dashboard': {'url': '/registra/', 'role': 'registra'},
@@ -204,3 +212,56 @@ def get_help(request):
         'language': language,
         'available_languages': ['en', 'fr']
     })
+
+
+@login_required
+def get_system_report(request):
+    """Get system statistics for the report dashboard"""
+    try:
+        # Get total counts
+        total_semesters = Semester.objects.count()
+        total_students = Student.objects.count()
+        total_courses = Course.objects.count()
+        total_professors = CustomUser.objects.filter(role='professor').count()
+        total_enrollments = Enrollment.objects.count()
+        
+        # Get active semester
+        active_semester = Semester.objects.filter(is_active=True).first()
+        active_semester_name = active_semester.name if active_semester else 'None'
+        
+        # Get pending assignments (courses without professors)
+        pending_assignments = Course.objects.filter(professor__isnull=True).count()
+        
+        # Get grades submitted
+        grades_submitted = Course.objects.filter(grades_submitted=True).count()
+        
+        # Get courses coded
+        courses_coded = Course.objects.filter(is_coded=True).count()
+        
+        # Get courses decoded
+        courses_decoded = Course.objects.filter(is_decoded=True).count()
+        
+        # Get active courses this semester
+        active_courses = Course.objects.filter(semester=active_semester).count() if active_semester else 0
+        
+        return JsonResponse({
+            'success': True,
+            'statistics': {
+                'total_semesters': total_semesters,
+                'total_students': total_students,
+                'total_courses': total_courses,
+                'total_professors': total_professors,
+                'total_enrollments': total_enrollments,
+                'pending_assignments': pending_assignments,
+                'grades_submitted': grades_submitted,
+                'courses_coded': courses_coded,
+                'courses_decoded': courses_decoded,
+                'active_semester': active_semester_name,
+                'active_courses': active_courses,
+            }
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
