@@ -56,6 +56,39 @@
     </div>
 </div>
 
+<!-- Workflow Panel (Step-by-Step Guide) -->
+<div id="workflow-panel" class="workflow-panel d-none">
+    <!-- Panel Header -->
+    <div class="workflow-header">
+        <div class="workflow-title">
+            <span id="workflow-title-text">📖 Step-by-Step Guide</span>
+        </div>
+        <button id="workflow-close-btn" type="button" class="workflow-close-btn" title="Close">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </button>
+    </div>
+    
+    <!-- Workflow Steps -->
+    <div class="workflow-body">
+        <div id="workflow-steps-container">
+            <!-- Steps will be inserted here dynamically -->
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="workflow-actions">
+            <button id="workflow-prev-btn" class="workflow-btn workflow-btn-secondary" style="display:none;">
+                ← Previous
+            </button>
+            <button id="workflow-next-btn" class="workflow-btn workflow-btn-primary">
+                Next →
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- CSS Styles for Voice Assistant -->
 <style>
     /* ============ VOICE WIDGET ============ */
@@ -289,6 +322,164 @@
         border-color: #1fac18;
     }
 
+    /* ============ WORKFLOW PANEL ============ */
+    .workflow-panel {
+        position: fixed;
+        bottom: 85px;
+        right: 20px;
+        width: 380px;
+        max-height: 500px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        animation: slideInUp 0.3s ease-out;
+        overflow: hidden;
+    }
+
+    .workflow-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .workflow-title {
+        font-size: 14px;
+        font-weight: 600;
+        flex: 1;
+    }
+
+    #workflow-title-text {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .workflow-close-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .workflow-close-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: rotate(90deg);
+    }
+
+    .workflow-body {
+        padding: 16px;
+        overflow-y: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #workflow-steps-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .workflow-step {
+        border-left: 4px solid #667eea;
+        background: #f8f9ff;
+        padding: 12px;
+        border-radius: 6px;
+        animation: slideIn 0.3s ease-out forwards;
+        opacity: 0;
+    }
+
+    .workflow-step.active {
+        background: #ede9fe;
+        border-left-color: #764ba2;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+    }
+
+    .workflow-step-number {
+        font-weight: bold;
+        color: #667eea;
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .workflow-step-title {
+        font-weight: 600;
+        color: #333;
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .workflow-step-description {
+        font-size: 12px;
+        color: #666;
+        line-height: 1.5;
+    }
+
+    .workflow-step.active .workflow-step-number {
+        color: #764ba2;
+    }
+
+    .workflow-step.active .workflow-step-title {
+        color: #764ba2;
+    }
+
+    .workflow-actions {
+        display: flex;
+        gap: 10px;
+        padding-top: 12px;
+        border-top: 1px solid #eee;
+    }
+
+    .workflow-btn {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .workflow-btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .workflow-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .workflow-btn-secondary {
+        background: #f0f0f0;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .workflow-btn-secondary:hover {
+        background: #e8e8e8;
+    }
+
     /* ============ UTILITIES ============ */
     .d-none {
         display: none !important;
@@ -368,6 +559,196 @@
         document.addEventListener('DOMContentLoaded', window.VoicePanelControl.init);
     } else {
         window.VoicePanelControl.init();
+    }
+</script>
+
+<!-- Workflow Control -->
+<script>
+    window.WorkflowManager = window.WorkflowManager || {};
+    
+    window.WorkflowManager.currentStep = 0;
+    window.WorkflowManager.currentWorkflow = null;
+    
+    window.WorkflowManager.workflows = {
+        'create-semester': {
+            title: '📅 Create Semester',
+            steps: [
+                { title: 'Go to Semesters', description: 'Navigate to the Semesters management page' },
+                { title: 'Click Add New', description: 'Click the "Add New Semester" button' },
+                { title: 'Fill Details', description: 'Enter semester name and academic dates' },
+                { title: 'Save', description: 'Click Save to create the semester' }
+            ],
+            navigateUrl: '/admin-panel/semesters/'
+        },
+        'add-courses': {
+            title: '📚 Add Courses',
+            steps: [
+                { title: 'Go to Courses', description: 'Navigate to the Courses management page' },
+                { title: 'Click Add New', description: 'Click the "Add New Course" button' },
+                { title: 'Enter Details', description: 'Enter course name, code, and credits' },
+                { title: 'Assign to Semester', description: 'Select the appropriate semester' },
+                { title: 'Save', description: 'Click Save to create the course' }
+            ],
+            navigateUrl: '/admin-panel/courses/'
+        },
+        'import-students': {
+            title: '👥 Import Students',
+            steps: [
+                { title: 'Go to Import', description: 'Navigate to the Import Data page' },
+                { title: 'Select File', description: 'Upload CSV file with student data' },
+                { title: 'Review Data', description: 'Preview the data that will be imported' },
+                { title: 'Confirm', description: 'Confirm the import to proceed' },
+                { title: 'Complete', description: 'Import is complete!' }
+            ],
+            navigateUrl: '/admin-panel/import/'
+        },
+        'create-professor': {
+            title: '👨‍🏫 Create Professors',
+            steps: [
+                { title: 'Go to Create User', description: 'Navigate to the User creation page' },
+                { title: 'Select Role', description: 'Select "Professor" as the user role' },
+                { title: 'Fill Details', description: 'Enter professor name, email, and contact info' },
+                { title: 'Assign Courses', description: 'Select courses to assign to this professor' },
+                { title: 'Save', description: 'Click Save to create the professor account' }
+            ],
+            navigateUrl: '/accounts/create/'
+        },
+        'monitor-activity': {
+            title: '📋 Monitor Activity',
+            steps: [
+                { title: 'Go to Activity Log', description: 'Navigate to the Activity Log page' },
+                { title: 'View Activities', description: 'See all system activities and changes' },
+                { title: 'Use Filters', description: 'Filter by date, user, or action type' },
+                { title: 'Export Reports', description: 'Export activity logs for records' }
+            ],
+            navigateUrl: '/admin-panel/activity-log/'
+        }
+    };
+    
+    window.WorkflowManager.startWorkflow = function(workflowKey) {
+        this.currentWorkflow = this.workflows[workflowKey];
+        this.currentStep = 0;
+        
+        if (!this.currentWorkflow) {
+            console.error('Workflow not found:', workflowKey);
+            return;
+        }
+        
+        this.showWorkflowPanel();
+        this.displayStep(0);
+    };
+    
+    window.WorkflowManager.showWorkflowPanel = function() {
+        const panel = document.getElementById('workflow-panel');
+        if (panel) {
+            panel.classList.remove('d-none');
+            
+            // Hide voice panel
+            const voicePanel = document.getElementById('voice-panel');
+            if (voicePanel) {
+                voicePanel.classList.add('d-none');
+            }
+        }
+    };
+    
+    window.WorkflowManager.displayStep = function(stepIndex) {
+        if (!this.currentWorkflow) return;
+        
+        const containerEl = document.getElementById('workflow-steps-container');
+        if (!containerEl) return;
+        
+        // Clear previous steps
+        containerEl.innerHTML = '';
+        
+        // Display all steps with current step highlighted
+        this.currentWorkflow.steps.forEach((step, idx) => {
+            const stepEl = document.createElement('div');
+            stepEl.className = 'workflow-step' + (idx === stepIndex ? ' active' : '');
+            stepEl.innerHTML = `
+                <div class="workflow-step-number">Step ${idx + 1}</div>
+                <div class="workflow-step-title">${step.title}</div>
+                <div class="workflow-step-description">${step.description}</div>
+            `;
+            containerEl.appendChild(stepEl);
+        });
+        
+        this.currentStep = stepIndex;
+        
+        // Update buttons
+        const prevBtn = document.getElementById('workflow-prev-btn');
+        const nextBtn = document.getElementById('workflow-next-btn');
+        
+        if (prevBtn) {
+            prevBtn.style.display = stepIndex > 0 ? 'block' : 'none';
+        }
+        
+        if (nextBtn) {
+            nextBtn.textContent = stepIndex === this.currentWorkflow.steps.length - 1 
+                ? 'Finish ✓' 
+                : 'Next →';
+        }
+    };
+    
+    window.WorkflowManager.nextStep = function() {
+        if (!this.currentWorkflow) return;
+        
+        if (this.currentStep < this.currentWorkflow.steps.length - 1) {
+            this.displayStep(this.currentStep + 1);
+        } else {
+            // Workflow complete
+            this.finishWorkflow();
+        }
+    };
+    
+    window.WorkflowManager.previousStep = function() {
+        if (this.currentStep > 0) {
+            this.displayStep(this.currentStep - 1);
+        }
+    };
+    
+    window.WorkflowManager.finishWorkflow = function() {
+        const panel = document.getElementById('workflow-panel');
+        if (panel) {
+            panel.classList.add('d-none');
+        }
+        
+        if (this.currentWorkflow && this.currentWorkflow.navigateUrl) {
+            window.location.href = this.currentWorkflow.navigateUrl;
+        }
+    };
+    
+    window.WorkflowManager.init = function() {
+        const closeBtn = document.getElementById('workflow-close-btn');
+        const nextBtn = document.getElementById('workflow-next-btn');
+        const prevBtn = document.getElementById('workflow-prev-btn');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('workflow-panel').classList.add('d-none');
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.nextStep();
+            });
+        }
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.previousStep();
+            });
+        }
+    };
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.WorkflowManager.init);
+    } else {
+        window.WorkflowManager.init();
     }
 </script>
 
