@@ -601,8 +601,68 @@
             }
         }
     </style>
+    <!-- Driver.js for Onboarding Tour -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
+    
     <!-- Font Awesome for Voice Assistant Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* Modern Dark Mode toggle and Tour button styles */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            background: rgba(26, 74, 138, 0.05);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--blue-mid);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: rgba(26, 74, 138, 0.15);
+            transform: scale(1.05);
+        }
+
+        /* Customizing the Driver.js popovers to match our theme */
+        .driver-popover {
+            border-radius: 16px !important;
+            font-family: 'DM Sans', sans-serif !important;
+            padding: 20px !important;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+        }
+        .driver-popover-title {
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+            color: var(--blue-deep) !important;
+        }
+        .driver-popover-description {
+            font-size: 0.9rem !important;
+            color: var(--muted) !important;
+        }
+        .driver-popover-next-btn, .driver-popover-prev-btn {
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+        }
+        .driver-popover-next-btn {
+            background: var(--blue-mid) !important;
+            text-shadow: none !important;
+        }
+        .driver-popover-close-btn {
+            color: var(--muted) !important;
+        }
+    </style>
 </head>
 <body>
     <!-- SIDEBAR -->
@@ -671,14 +731,19 @@
         <header class="topbar">
             <h1 class="topbar-title">{% block page_title %}Page{% endblock %}</h1>
             
+            <div style="flex:1;"></div>
+
             {% if active_semester %}
-            <div class="semester-pill">
+            <div class="semester-pill" id="tour-semester-pill">
                 <div class="active-dot"></div>
                 <span class="semester-text">{{ active_semester.name }}</span>
             </div>
             {% endif %}
 
-            <div class="topbar-avatar">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+            <div class="header-actions">
+                <button class="action-btn" id="start-tour-btn" title="Take a tour">🎯</button>
+                <div class="topbar-avatar" id="tour-avatar">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+            </div>
         </header>
 
         <!-- PAGE BODY -->
@@ -693,6 +758,9 @@
     <!-- Admin Help Chat Component -->
     {% include 'components/admin_help_chat.html' %}
 
+    <!-- Driver.js script -->
+    <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+
     <!-- Voice Assistant Script -->
     <script src="{% static 'js/voice-annyang.js' %}"></script>
 
@@ -703,6 +771,73 @@
                 item.addEventListener('click', function() {
                     document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                     this.classList.add('active');
+                });
+            }
+        });
+
+        // Initialize Driver.js Tour
+        document.addEventListener('DOMContentLoaded', function() {
+            const driver = window.driver.js.driver;
+            
+            const tour = driver({
+                showProgress: true,
+                steps: [
+                    {
+                        element: '.sidebar-brand',
+                        popover: {
+                            title: 'Welcome to ICT App',
+                            description: 'A modern, powerful results management system for administrators.',
+                            side: "right", align: 'start'
+                        }
+                    },
+                    {
+                        element: '.sidebar-nav',
+                        popover: {
+                            title: 'Navigation Menu',
+                            description: 'Navigate easily through dashboard, semesters, courses, and students data.',
+                            side: "right", align: 'start'
+                        }
+                    },
+                    {
+                        element: 'a[href="{% url "import_file" %}"]',
+                        popover: {
+                            title: 'Data Import',
+                            description: 'Bulk import courses, students, and enrollments using CSV files.',
+                            side: "right", align: 'start'
+                        }
+                    },
+                    {
+                        element: '#voice-toggle-btn',
+                        popover: {
+                            title: 'Smart Voice Assistant',
+                            description: 'Click here to use voice commands! Try saying "Report" or "Navigate to Courses".',
+                            side: "left", align: 'end'
+                        }
+                    },
+                    {
+                        element: '#tour-avatar',
+                        popover: {
+                            title: 'User Profile',
+                            description: 'Your profile and settings are here.',
+                            side: "bottom", align: 'end'
+                        }
+                    }
+                ]
+            });
+
+            // Start tour if not watched before
+            if (!localStorage.getItem('ict_admin_tour_completed')) {
+                setTimeout(() => {
+                    tour.drive();
+                    localStorage.setItem('ict_admin_tour_completed', 'true');
+                }, 1000);
+            }
+
+            // Start tour on button click
+            const startTourBtn = document.getElementById('start-tour-btn');
+            if (startTourBtn) {
+                startTourBtn.addEventListener('click', () => {
+                    tour.drive();
                 });
             }
         });
