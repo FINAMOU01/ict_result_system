@@ -23,13 +23,17 @@ class Grade(models.Model):
     
     enrollment = models.OneToOneField(Enrollment, on_delete=models.CASCADE, related_name='grade')
     cc_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, 
-                                   help_text="Continuous Assessment (0-20)")
+                                   help_text="CA Score (0-30)")
     sn_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
-                                   help_text="Semester Exam (0-70)")
+                                   help_text="Final Score (0-70)")
     attendance_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
                                           default=0, help_text="Attendance (0-10)")
+    assignment_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True,
+                                           default=0, help_text="Assignment (0-20)")
     final_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     letter_grade = models.CharField(max_length=2, choices=GRADE_CHOICES, null=True, blank=True)
+    cc_submitted = models.BooleanField(default=False)
+    sn_submitted = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     submitted_by = models.ForeignKey(
         CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
@@ -45,7 +49,7 @@ class Grade(models.Model):
     def calculate_final(self):
         """
         Calculate final score and letter grade.
-        Final Score = CC (0-20) + Attendance (0-10) + SN (0-70) = 100 total
+        Final Score = CA (0-30) + Attendance (0-10) + Final (0-70) = 110 total, capped at 100
         """
         if self.cc_score is not None and self.sn_score is not None:
             attendance = self.attendance_score if self.attendance_score is not None else 0
@@ -74,6 +78,13 @@ class Grade(models.Model):
             return 'D'
         else:
             return 'F'
+
+    def compute_final(self):
+        """Compute final score from CA and Final scores, and assign letter grade."""
+        if self.cc_score is not None and self.sn_score is not None:
+            self.final_score = self.cc_score + self.sn_score
+            self.letter_grade = self.get_letter_grade(self.final_score)
+            self.save()
 
     def __str__(self):
         return f"Grade for Code {self.enrollment.anonymous_code} in {self.enrollment.course.code}"

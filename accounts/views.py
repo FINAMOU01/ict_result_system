@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .forms import LoginForm, CreateUserForm
+from .forms import LoginForm, CreateUserForm, EditUserForm, ChangeEmailForm, ChangePasswordForm
 from .models import CustomUser, ActivityLog
 
 
@@ -29,8 +29,8 @@ def login_view(request):
         ActivityLog.objects.create(
             user=user,
             action='login',
-            description=f"User {user.username} ({user.get_full_name()}) logged in from {ip_address}",
-            affected_entity=f"User: {user.username}",
+            description=f"User {user.email} ({user.get_full_name()}) logged in from {ip_address}",
+            affected_entity=f"User: {user.email}",
             ip_address=ip_address,
             status='success'
         )
@@ -73,7 +73,11 @@ def create_user(request):
     form = CreateUserForm(request.POST or None)
     if request.method == 'POST':
         if form.is_valid():
-            user = form.save()
+            user = form.save(commit=False)
+            # Auto-generate username from email (remove domain part)
+            email_local = user.email.split('@')[0]
+            user.username = email_local
+            user.save()
             messages.success(request, f"Account created for {user.get_full_name()} ({user.get_role_display()})")
             return redirect('admin_dashboard')
         else:
@@ -107,3 +111,113 @@ def toggle_user_active(request, user_id):
     except CustomUser.DoesNotExist:
         messages.error(request, "User not found.")
     return redirect('user_list')
+
+
+@login_required
+def edit_user(request, user_id):
+    if not request.user.is_admin():
+        messages.error(request, "Access denied.")
+        return redirect('dashboard')
+    
+    try:
+        user = CustomUser.objects.get(id=user_id)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('user_list')
+    
+    form = EditUserForm(request.POST or None, instance=user)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            user_obj = form.save(commit=False)
+            # Auto-update username from email if email changed
+            email_local = user_obj.email.split('@')[0]
+            user_obj.username = email_local
+            user_obj.save()
+            messages.success(request, f"User {user_obj.get_full_name()} has been updated successfully.")
+            return redirect('user_list')
+        else:
+            # Display form validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    return render(request, 'admin_panel/edit_user.html', {'form': form, 'user': user})
+
+
+@login_required
+def manage_profile(request):
+    """Manage own profile - view personal information"""
+    user = request.user
+    return render(request, 'accounts/manage_profile.html', {'user': user})
+
+
+@login_required
+def change_email(request):
+    """Change own email address"""
+    user = request.user
+    form = ChangeEmailForm(request.POST or None, instance=user)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            old_email = user.email
+            new_email = form.cleaned_data['email']
+            
+            user_obj = form.save(commit=False)
+            # Update username from new email
+            email_local = new_email.split('@')[0]
+            user_obj.username = email_local
+            user_obj.save()
+            
+            # Log the action
+            ip_address = get_client_ip(request)
+            ActivityLog.objects.create(
+                user=user,
+                action='profile_update',
+                description=f"Email changed from {old_email} to {new_email}",
+                affected_entity=f"User: {user.email}",
+                ip_address=ip_address,
+                status='success'
+            )
+            
+            messages.success(request, f"Your email has been updated successfully to {new_email}")
+            return redirect('manage_profile')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    
+    return render(request, 'accounts/change_email.html', {'form': form})
+
+
+@login_required
+def change_password(request):
+    """Change own password"""
+    user = request.user
+    form = ChangePasswordForm(user, request.POST or None)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            form.save()
+            # Keep session alive after password change
+            update_session_auth_hash(request, user)
+            
+            # Log the action
+            ip_address = get_client_ip(request)
+            ActivityLog.objects.create(
+                user=user,
+                action='profile_update',
+                description=f"Password changed",
+                affected_entity=f"User: {user.email}",
+                ip_address=ip_address,
+                status='success'
+            )
+            
+            messages.success(request, "Your password has been updated successfully")
+            return redirect('manage_profile')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{error}")
+    
+    return render(request, 'accounts/change_password.html', {'form': form})

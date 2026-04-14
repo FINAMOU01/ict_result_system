@@ -4,6 +4,7 @@ import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from academics.models import Enrollment, Course
+from academics.utils import get_grade
 from .models import Grade
 
 
@@ -68,7 +69,15 @@ def generate_results_excel(course):
         ca = float(grade.cc_score) if grade and grade.cc_score is not None else ''
         final_sn = float(grade.sn_score) if grade and grade.sn_score is not None else ''
         final_score = float(grade.final_score) if grade and grade.final_score is not None else ''
-        remarks = 'PASS' if isinstance(final_score, float) and final_score >= 10 else ('FAIL' if isinstance(final_score, float) else 'N/A')
+        attendance = float(grade.attendance_score) if grade and grade.attendance_score is not None else ''
+        assignment = float(grade.assignment_score) if grade and grade.assignment_score is not None else ''
+        
+        # Use get_grade to determine pass/fail based on actual grading scale
+        if isinstance(final_score, float):
+            _, _, is_pass = get_grade(final_score)
+            remarks = 'PASS' if is_pass else 'FAIL'
+        else:
+            remarks = 'N/A'
 
         # Append (Walk-in) note to name if walk-in student
         student_name = enrollment.student.full_name()
@@ -81,8 +90,8 @@ def generate_results_excel(course):
             enrollment.student.first_name,                           # First Name
             enrollment.student.last_name,                            # Last Name
             enrollment.student.email if enrollment.student.email else '',  # Email Address
-            '',                                                      # Attendance/10 (blank)
-            '',                                                      # Assignment/20 (blank)
+            attendance,                                              # Attendance/10
+            assignment,                                              # Assignment/20
             ca,                                                      # CA/30 (cc_score)
             final_sn,                                                # Final/70 (sn_score)
             f"{course.code} {course.name}",                          # Course Name (full format)
@@ -180,13 +189,13 @@ def generate_results_csv(course):
     """
     Generate decoded results as CSV bytes.
     Columns: Name | ID Number | First Name | Last Name | Email Address | 
-    Attendance/10 | CC/20 | SN/70 | Final/100 | Letter Grade | Course Name | Semester
+    Attendance/10 | Assignment/20 | CA/30 | Final/70 | Course Name | Semester
     """
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow([
         'Name', 'ID Number', 'First Name', 'Last Name', 'Email Address',
-        'Attendance / 10', 'CC / 20', 'SN / 70', 'Final / 100', 'Letter Grade', 'Course Name', 'Semester'
+        'Attendance / 10', 'Assignment / 20', 'CA / 30', 'Final / 70', 'Course Name', 'Semester'
     ])
 
     enrollments = course.enrollments.select_related('student', 'grade').order_by('student__last_name', 'student__first_name')
@@ -195,10 +204,9 @@ def generate_results_csv(course):
         
         # Extract grade components
         attendance = float(grade.attendance_score) if grade and grade.attendance_score is not None else ''
-        cc = float(grade.cc_score) if grade and grade.cc_score is not None else ''
-        sn = float(grade.sn_score) if grade and grade.sn_score is not None else ''
-        final_score = float(grade.final_score) if grade and grade.final_score is not None else ''
-        letter_grade = grade.letter_grade if grade and grade.letter_grade else ''
+        assignment = float(grade.assignment_score) if grade and grade.assignment_score is not None else ''
+        ca = float(grade.cc_score) if grade and grade.cc_score is not None else ''
+        final = float(grade.sn_score) if grade and grade.sn_score is not None else ''
 
         writer.writerow([
             enrollment.student.matricule,
@@ -207,10 +215,9 @@ def generate_results_csv(course):
             enrollment.student.last_name,
             enrollment.student.email if enrollment.student.email else '',
             attendance,
-            cc,
-            sn,
-            final_score,
-            letter_grade,
+            assignment,
+            ca,
+            final,
             f"{course.code} {course.name}",
             course.semester.name,
         ])

@@ -659,6 +659,10 @@
         </nav>
 
         <div class="sidebar-footer">
+            <a href="{% url 'manage_profile' %}" class="logout-btn" style="background: rgba(91, 155, 213, 0.15); border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div class="logout-icon">👤</div>
+                <span class="logout-text">My Profile</span>
+            </a>
             <a href="{% url 'logout' %}" class="logout-btn">
                 <div class="logout-icon">🚪</div>
                 <span class="logout-text">Sign Out</span>

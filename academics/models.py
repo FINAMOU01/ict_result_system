@@ -3,7 +3,7 @@ from accounts.models import CustomUser
 
 
 class Semester(models.Model):
-    name = models.CharField(max_length=50)  # e.g. "S1-2025"
+    name = models.CharField(max_length=50)  # e.g. "Spring 2026(MArch)"
     academic_year = models.CharField(max_length=20)  # e.g. "2024-2025"
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -39,6 +39,8 @@ class Course(models.Model):
     )
     is_coded = models.BooleanField(default=False)  # Whether anonymization has been done
     coding_done_at = models.DateTimeField(null=True, blank=True)
+    cc_submitted = models.BooleanField(default=False)  # Whether CA scores submitted
+    sn_submitted = models.BooleanField(default=False)  # Whether Final scores submitted
     grades_submitted = models.BooleanField(default=False)
     grades_submitted_at = models.DateTimeField(null=True, blank=True)
     is_decoded = models.BooleanField(default=False)  # Whether results have been decoded

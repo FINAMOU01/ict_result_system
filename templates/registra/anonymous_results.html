@@ -1,82 +1,281 @@
 {% extends 'base.html' %}
 {% block title %}Anonymous Results — {{ course.code }}{% endblock %}
-{% block page_title %}{{ course.code }}: {{ course.name }}{% endblock %}
-
-{% block extra_css %}
-<style>
-    .code-number { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--ict-navy); }
-    .score-display { font-family: 'JetBrains Mono', monospace; font-weight: 600; text-align: center; }
-    .dash { color: #999; }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="d-flex gap-2 mb-4 flex-wrap">
-    <a href="{% url 'registra_dashboard' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i>Back</a>
-    <span class="badge badge-level-{{ course.level }} px-3 py-2">{{ course.get_level_display }}</span>
-    <span class="text-muted small d-flex align-items-center"><i class="bi bi-people me-1"></i>{{ enrollments.count }} students</span>
-</div>
 
-<div class="alert alert-info d-flex align-items-start mb-4" style="font-size:0.875rem;">
-    <i class="bi bi-info-circle-fill me-2 mt-1"></i>
-    <div>
-        <strong>Anonymous Results:</strong> The grades below are shown with student anonymization codes. Student names and matricule numbers are hidden. Click the "Decode Results" button below to reveal student identities.
+<style>
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 600; color: #6B7280;
+  text-decoration: none; margin-bottom: 1.25rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #1A4A8A; }
+
+.course-header-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 1.5rem; margin-bottom: 1.5rem;
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 1rem;
+  animation: fadeInUp 0.4s ease both;
+  position: relative; overflow: hidden;
+}
+.course-header-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.course-header-left { display: flex; flex-direction: column; gap: 0.4rem; }
+.course-header-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; font-weight: 600; color: #1A4A8A;
+}
+.course-header-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 700; color: #0F1C2E;
+}
+.course-header-meta {
+  display: flex; align-items: center; gap: 0.75rem;
+  flex-wrap: wrap; margin-top: 0.25rem;
+  font-size: 0.78rem; color: #6B7280;
+}
+
+.info-alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 500;
+  background: #EFF6FF; color: #1E40AF;
+  border-left: 4px solid #1A4A8A;
+  animation: fadeInUp 0.4s ease 0.1s both;
+}
+
+.grading-scale {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem; margin-bottom: 1.5rem;
+  animation: fadeInUp 0.4s ease 0.15s both;
+}
+.grade-item {
+  background: white; padding: 0.75rem 1rem;
+  border-radius: 8px; border: 1px solid #EEF2F8;
+  font-size: 0.78rem; display: flex;
+  justify-content: space-between; align-items: center;
+}
+.grade-letter {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; margin-right: 0.5rem;
+}
+.grade-range {
+  color: #6B7280; font-size: 0.75rem;
+}
+.grade-a { border-left: 4px solid #059669; }
+.grade-bplus { border-left: 4px solid #0284C7; }
+.grade-b { border-left: 4px solid #0284C7; }
+.grade-cplus { border-left: 4px solid #F59E0B; }
+.grade-c { border-left: 4px solid #F59E0B; }
+.grade-dplus { border-left: 4px solid #DC2626; }
+.grade-d { border-left: 4px solid #DC2626; }
+.grade-f { border-left: 4px solid #7C3AED; }
+
+.table-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease 0.2s both;
+  margin-bottom: 1.5rem;
+}
+
+.data-table {
+  width: 100%; border-collapse: collapse;
+}
+.data-table th {
+  padding: 0.75rem 1rem; text-align: center;
+  font-size: 0.68rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: #F8FAFF; border-bottom: 1px solid #EEF2F8;
+}
+.data-table th:first-child { text-align: left; }
+.data-table td {
+  padding: 0.875rem 1rem; font-size: 0.82rem;
+  color: #0F1C2E; border-bottom: 1px solid #F1F5F9;
+  text-align: center;
+}
+.data-table td:first-child { text-align: left; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #FAFBFF; }
+
+.code-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem; font-weight: 700;
+  color: #1A4A8A; background: #EEF4FF;
+  padding: 0.35rem 0.6rem; border-radius: 6px;
+  display: inline-block;
+}
+
+.score-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600; color: #0F1C2E;
+}
+
+.grade-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 0.9rem;
+  padding: 0.3rem 0.7rem; border-radius: 6px;
+  display: inline-block;
+}
+.grade-badge-a { background: #DCFCE7; color: #166534; }
+.grade-badge-bplus { background: #D1E7DD; color: #0F5132; }
+.grade-badge-b { background: #D1E7DD; color: #0F5132; }
+.grade-badge-cplus { background: #FFF3CD; color: #664D03; }
+.grade-badge-c { background: #FFF3CD; color: #664D03; }
+.grade-badge-dplus { background: #FFE5B4; color: #8B5A00; }
+.grade-badge-d { background: #FFE5B4; color: #8B5A00; }
+.grade-badge-f { background: #FEE2E2; color: #991B1B; }
+.grade-badge-dash { color: #9CA3AF; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.65rem 1.25rem; border-radius: 10px;
+  font-size: 0.78rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+}
+.btn-primary { background: #1A4A8A; color: white; }
+.btn-primary:hover { background: #2563B0; transform: translateY(-1px); }
+.btn-danger { background: #DC2626; color: white; }
+.btn-danger:hover { background: #B91C1C; transform: translateY(-1px); }
+
+.empty-state {
+  text-align: center; padding: 3rem 2rem;
+  color: #9CA3AF;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- BACK LINK -->
+<a href="{% url 'registra_dashboard' %}" class="back-link">← Back to Dashboard</a>
+
+<!-- COURSE HEADER CARD -->
+<div class="course-header-card">
+  <div class="course-header-left">
+    <div class="course-header-code">{{ course.code }}</div>
+    <div class="course-header-name">{{ course.name }}</div>
+    <div class="course-header-meta">
+      <span>📅 {{ course.semester.name }}</span>
+      <span>👥 {{ enrollments.count }} student{{ enrollments.count|pluralize }}</span>
     </div>
+  </div>
 </div>
 
-<div class="ict-table mb-4">
-    <table class="table mb-0">
-        <thead>
-            <tr>
-                <th style="width:80px;">Code</th>
-                <th style="width:100px;">Attendance<small>/10</small></th>
-                <th style="width:100px;">CC<small>/20</small></th>
-                <th style="width:100px;">SN<small>/70</small></th>
-                <th style="width:100px;">Final<small>/100</small></th>
-                <th style="width:80px;">Grade</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for enrollment in enrollments %}
-            <tr>
-                <td><span class="code-number">{{ enrollment.anonymous_code }}</span></td>
-                <td class="score-display">
-                    {% if enrollment.grade.attendance_score is not None %}
-                    {{ enrollment.grade.attendance_score }}
-                    {% else %}—{% endif %}
-                </td>
-                <td class="score-display">
-                    {% if enrollment.grade.cc_score is not None %}
-                    {{ enrollment.grade.cc_score }}
-                    {% else %}—{% endif %}
-                </td>
-                <td class="score-display">
-                    {% if enrollment.grade.sn_score is not None %}
-                    {{ enrollment.grade.sn_score }}
-                    {% else %}—{% endif %}
-                </td>
-                <td class="score-display">
-                    {% if enrollment.grade.final_score is not None %}
-                    {{ enrollment.grade.final_score }}
-                    {% else %}—{% endif %}
-                </td>
-                <td class="score-display">
-                    {% if enrollment.grade.letter_grade %}
-                    <strong>{{ enrollment.grade.letter_grade }}</strong>
-                    {% else %}—{% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="text-center text-muted py-4">No grades submitted yet.</td></tr>
-            {% endfor %}
-        </tbody>
+<!-- INFO ALERT -->
+<div class="info-alert">
+  🔐 <strong>Anonymous Results:</strong> The grades below are shown with student anonymization codes. Student names and matricule numbers are hidden. Click the "Decode Results" button to reveal student identities.
+</div>
+
+<!-- GRADING SCALE -->
+<div style="margin-bottom: 1.5rem; animation: fadeInUp 0.4s ease 0.15s both;">
+  <h5 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; color: #0F1C2E;">ICT University Grading Scale</h5>
+  <div class="grading-scale">
+    <div class="grade-item grade-a">
+      <span class="grade-letter">A</span>
+      <span class="grade-range">80-100 (4.0 GP)</span>
+    </div>
+    <div class="grade-item grade-bplus">
+      <span class="grade-letter">B+</span>
+      <span class="grade-range">70-79 (3.5 GP)</span>
+    </div>
+    <div class="grade-item grade-b">
+      <span class="grade-letter">B</span>
+      <span class="grade-range">60-69 (3.0 GP)</span>
+    </div>
+    <div class="grade-item grade-cplus">
+      <span class="grade-letter">C+</span>
+      <span class="grade-range">55-59 (2.5 GP)</span>
+    </div>
+    <div class="grade-item grade-c">
+      <span class="grade-letter">C</span>
+      <span class="grade-range">50-54 (2.0 GP)</span>
+    </div>
+    <div class="grade-item grade-dplus">
+      <span class="grade-letter">D+</span>
+      <span class="grade-range">45-49 (1.5 GP)</span>
+    </div>
+    <div class="grade-item grade-d">
+      <span class="grade-letter">D</span>
+      <span class="grade-range">40-44 (1.0 GP)</span>
+    </div>
+    <div class="grade-item grade-f">
+      <span class="grade-letter">F</span>
+      <span class="grade-range">0-39 (0.0 GP)</span>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS TABLE -->
+<div class="table-card">
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;">Code</th>
+          <th>CA<br/><small style="font-weight:400; font-size:0.65rem;">/30</small></th>
+          <th>Final<br/><small style="font-weight:400; font-size:0.65rem;">/70</small></th>
+          <th>Final<br/><small style="font-weight:400; font-size:0.65rem;">/100</small></th>
+          <th>Grade</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enrollment in enrollments %}
+        <tr>
+          <td><span class="code-cell">{{ enrollment.anonymous_code }}</span></td>
+          <td class="score-cell">
+            {% if enrollment.grade.cc_score is not None %}
+              {{ enrollment.grade.cc_score }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="score-cell">
+            {% if enrollment.grade.sn_score is not None %}
+              {{ enrollment.grade.sn_score }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="score-cell">
+            {% if enrollment.grade.final_score is not None %}
+              <strong>{{ enrollment.grade.final_score }}</strong>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if enrollment.grade.letter_grade %}
+              <span class="grade-badge grade-badge-{{ enrollment.grade.letter_grade|lower }}">
+                {{ enrollment.grade.letter_grade }}
+              </span>
+            {% else %}
+              <span class="grade-badge-dash">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="empty-state">
+            <span style="display:block; font-size:2rem; margin-bottom:0.5rem;">📊</span>
+            No grades submitted yet
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
     </table>
+  </div>
 </div>
 
-<form method="post" action="{% url 'registra_decode_results' course.id %}">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger px-5 py-2" onclick="return confirm('Decode results? This will reveal student identities. This cannot be undone.')">
-        <i class="bi bi-unlock me-2"></i>🔓 Decode Results
-    </button>
+<!-- DECODE BUTTON -->
+<form method="post" action="{% url 'registra_decode_results' course.id %}" style="animation: fadeInUp 0.4s ease 0.3s both;">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-danger" onclick="return confirm('Decode results? This will reveal student identities. This action cannot be undone.')">
+    🔓 Decode Results
+  </button>
 </form>
+
 {% endblock %}

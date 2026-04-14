@@ -2,6 +2,11 @@
 {% block title %}{{ course.code }} — Student List{% endblock %}
 {% block content %}
 
+<script>
+// Make CSRF token globally available
+window.csrfToken = '{{ csrf_token }}';
+</script>
+
 <style>
 .back-link {
   display: inline-flex; align-items: center; gap: 0.4rem;
@@ -204,10 +209,10 @@
   <div class="action-bar-btns">
     {% if not course.is_coded %}
       <a href="{% url 'add_walkin_student' course.id %}" class="btn btn-success">+ Add Walk-in Student</a>
-      <a href="{% url 'add_from_admissions' course.id %}" class="btn btn-outline">+ Add From Admissions</a>
+      <button type="button" class="btn btn-outline" onclick="openAddFromAdmissionsModal({{ course.id }})">+ Add From Admissions</button>
       <a href="{% url 'generate_codes' course.id %}" class="btn btn-orange">🔀 Generate Codes</a>
     {% else %}
-      <button type="button" class="btn btn-outline" onclick="document.getElementById('add-student-form').style.display = document.getElementById('add-student-form').style.display === 'none' ? 'block' : 'none';">
+      <button type="button" class="btn btn-outline" onclick="openAddFromAdmissionsModal({{ course.id }})">
         + Add Student
       </button>
       <a href="{% url 'download_coding_sheet' course.id %}" class="btn btn-primary">⬇ Download Confidential Sheet</a>
@@ -287,7 +292,7 @@
   </div>
 </div>
 
-<!-- ADD STUDENT FORM (for coded courses) -->
+<!-- ADD STUDENT FORM (for coded courses) - HIDDEN, using modal instead -->
 {% if course.is_coded %}
 <div id="add-student-form" style="display:none; background:#EFF6FF; border:2px solid #1A4A8A; border-radius:12px; padding:1.25rem; margin-bottom:1.25rem; animation:fadeInUp 0.3s ease;">
   <h5 style="margin-bottom:1rem; color:#0C4A6E; font-weight:700;">Add Student from Admitted List</h5>
@@ -313,9 +318,6 @@
     ✅ Add to Course
   </button>
 </div>
-{% endif %}
-
-{% endblock %}
 
 <script>
 function lookupStudent(event) {
@@ -355,7 +357,31 @@ function lookupStudent(event) {
 
 function showStudentPreview(html, isError) {
   const preview = document.getElementById('student-preview');
-  preview.innerHTML = html;
+  
+  // Extract plain text from HTML for copying
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  const textContent = tempDiv.textContent || tempDiv.innerText || '';
+  
+  let fullHtml = html;
+  
+  // Add copy button if there's an error message
+  if (isError) {
+    fullHtml += `<button type="button" class="copy-btn" data-text="${escapeHtml(textContent)}" style="display:block; margin-top:0.75rem; padding:0.5rem 1rem; background:#DC2626; color:white; border:none; border-radius:6px; font-size:0.9rem; font-weight:600; cursor:pointer; transition:background 0.2s;">
+      📋 Copy Message
+    </button>`;
+  }
+  
+  preview.innerHTML = fullHtml;
+  
+  // Attach click handler to copy button
+  const copyBtn = preview.querySelector('.copy-btn');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function() {
+      copyMessageToClipboard(this);
+    });
+  }
+  
   if (isError) {
     preview.style.color = '#DC2626';
     preview.style.borderColor = '#FCA5A5';
@@ -368,12 +394,45 @@ function showStudentPreview(html, isError) {
   preview.style.display = 'block';
 }
 
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+function copyMessageToClipboard(btn) {
+  const text = btn.getAttribute('data-text');
+  
+  // Clean the text
+  const cleanText = text.replace(/[^\w\s\@\-\.\/\(\)]/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  navigator.clipboard.writeText(cleanText).then(() => {
+    // Show confirmation
+    const originalText = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    btn.style.background = '#059669';
+    
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.background = '#DC2626';
+    }, 2000);
+  }).catch(err => {
+    console.error('Copy failed:', err);
+    alert('Failed to copy message');
+  });
+}
+
 function confirmAdd(event) {
   event.preventDefault();
   const matricule = document.getElementById('matricule-input').value.trim();
   const courseId = "{{ course.id }}";
   
-  fetch(`/registra/courses/${courseId}/add-student/`, {
+  fetch(`/registra/course/${courseId}/add-student/`, {
     method: 'POST',
     headers: {
       'X-CSRFToken': '{{ csrf_token }}',
@@ -398,3 +457,224 @@ function confirmAdd(event) {
   });
 }
 </script>
+{% endif %}
+
+<!-- MODAL: ADD FROM ADMISSIONS -->
+<div id="addFromAdmissionsModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+  <div style="background:white; border-radius:16px; max-width:700px; width:90%; max-height:80vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:popIn 0.3s ease;">
+    <!-- Header -->
+    <div style="padding:1.5rem; border-bottom:1px solid #EEF2F8; display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <h2 style="margin:0; font-size:1.3rem; font-weight:700; color:#0F1C2E;">Add Student From Admissions</h2>
+        <p style="margin:0.25rem 0 0; font-size:0.85rem; color:#6B7280;">Search admitted students and add them to this course</p>
+      </div>
+      <button type="button" onclick="closeAddFromAdmissionsModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#6B7280;">&times;</button>
+    </div>
+
+    <!-- Search -->
+    <div style="padding:1.5rem; border-bottom:1px solid #EEF2F8;">
+      <input type="text" id="admissionsSearchInput" placeholder="Search by matricule or name..." 
+             style="width:100%; padding:0.75rem 1rem; border:1.5px solid #EEF2F8; border-radius:10px; font-size:0.9rem; margin-bottom:0.75rem;">
+      <button type="button" onclick="searchAdmittedStudents()" style="width:100%; padding:0.75rem; background:#1A4A8A; color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#2563B0'" onmouseout="this.style.background='#1A4A8A'">🔍 Search</button>
+    </div>
+
+    <!-- Results -->
+    <div id="admissionsSearchResults" style="padding:1.5rem; max-height:400px; overflow-y:auto;">
+      <p style="text-align:center; color:#6B7280;">Enter a search term to find students</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="padding:1rem 1.5rem; border-top:1px solid #EEF2F8; text-align:right;">
+      <button type="button" onclick="closeAddFromAdmissionsModal()" style="padding:0.65rem 1.25rem; background:#f3f4f6; border:1px solid #d1d5db; border-radius:8px; cursor:pointer; font-weight:600; color:#374151;">Close</button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes popIn {
+  from { opacity:0; transform:scale(0.95); }
+  to { opacity:1; transform:scale(1); }
+}
+
+#addFromAdmissionsModal {
+  display: none;
+}
+
+#addFromAdmissionsModal[style*="display: flex"] {
+  display: flex !important;
+}
+
+.modal-student-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:0.875rem; border-bottom:1px solid #F3F4F6;
+  transition:background 0.15s;
+}
+
+.modal-student-row:hover {
+  background:#F8FAFF;
+}
+
+.modal-student-info {
+  flex:1;
+}
+
+.modal-student-matricule {
+  font-family:'JetBrains Mono',monospace; font-weight:600; color:#1A4A8A; font-size:0.9rem;
+}
+
+.modal-student-name {
+  color:#0F1C2E; font-weight:500; margin-top:0.25rem; font-size:0.85rem;
+}
+
+.modal-student-level {
+  color:#6B7280; font-size:0.75rem; margin-top:0.25rem;
+}
+
+.modal-add-btn {
+  padding:0.5rem 1rem; background:#059669; color:white; border:none;
+  border-radius:8px; cursor:pointer; font-weight:600; font-size:0.85rem;
+  transition:background 0.2s;
+}
+
+.modal-add-btn:hover {
+  background:#047857;
+}
+
+.modal-add-btn:disabled {
+  background:#d1d5db; cursor:not-allowed;
+}
+</style>
+
+<script>
+function openAddFromAdmissionsModal(courseId) {
+  window.currentCourseId = courseId;
+  document.getElementById('addFromAdmissionsModal').style.display = 'flex';
+}
+
+function closeAddFromAdmissionsModal() {
+  document.getElementById('addFromAdmissionsModal').style.display = 'none';
+  document.getElementById('admissionsSearchInput').value = '';
+  document.getElementById('admissionsSearchResults').innerHTML = '<p style="text-align:center; color:#6B7280;">Enter a search term to find students</p>';
+}
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function getCSRFToken() {
+  return window.csrfToken || getCookie('csrftoken');
+}
+
+function searchAdmittedStudents() {
+  const query = document.getElementById('admissionsSearchInput').value.trim();
+  if (!query) {
+    alert('Please enter a search term');
+    return;
+  }
+
+  const resultsDiv = document.getElementById('admissionsSearchResults');
+  resultsDiv.innerHTML = '<p style="text-align:center; color:#6B7280;">Searching...</p>';
+
+  fetch(`/registra/course/${window.currentCourseId}/search-admitted/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken()
+    },
+    body: JSON.stringify({ q: query })
+  })
+  .then(r => {
+    // Handle non-JSON responses
+    const contentType = r.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Expected JSON response, got ${contentType || 'text/html'}`);
+    }
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    }
+    return r.json();
+  })
+  .then(data => {
+    if (data.error) {
+      resultsDiv.innerHTML = '<p style="text-align:center; color:#DC2626; padding:1rem;">❌ ' + data.error + '</p>';
+    } else if (data.students && data.students.length === 0) {
+      resultsDiv.innerHTML = '<p style="text-align:center; color:#6B7280; padding:1rem;">No students found</p>';
+    } else if (data.students) {
+      resultsDiv.innerHTML = data.students.map(student => `
+        <div class="modal-student-row">
+          <div class="modal-student-info">
+            <div class="modal-student-matricule">${student.matricule}</div>
+            <div class="modal-student-name">${student.first_name} ${student.last_name}</div>
+            <div class="modal-student-level">${student.level} • ${student.admitted_year}</div>
+          </div>
+          <button type="button" class="modal-add-btn" onclick="addStudentFromAdmissions('${student.matricule}')" ${student.already_enrolled ? 'disabled' : ''}>${student.already_enrolled ? 'Already Enrolled' : 'Add'}</button>
+        </div>
+      `).join('');
+    }
+  })
+  .catch(err => {
+    console.error('Search error:', err);
+    resultsDiv.innerHTML = '<p style="text-align:center; color:#DC2626; padding:1rem;">❌ Error: ' + err.message + '</p>';
+  });
+}
+
+function addStudentFromAdmissions(matricule) {
+  fetch(`/registra/course/${window.currentCourseId}/add-admitted/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken()
+    },
+    body: JSON.stringify({ matricule: matricule })
+  })
+  .then(r => {
+    const contentType = r.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Expected JSON response, got ${contentType || 'text/html'}`);
+    }
+    if (!r.ok) {
+      throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+    }
+    return r.json();
+  })
+  .then(data => {
+    if (data.success) {
+      alert('✅ ' + data.message);
+      closeAddFromAdmissionsModal();
+      location.reload();
+    } else {
+      alert('❌ ' + (data.error || 'Failed to add student'));
+    }
+  })
+  .catch(err => {
+    console.error('Add student error:', err);
+    alert('❌ Error: ' + err.message);
+  });
+}
+
+// Allow Enter key in search input
+document.addEventListener('DOMContentLoaded', function() {
+  const searchInput = document.getElementById('admissionsSearchInput');
+  if (searchInput) {
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchAdmittedStudents();
+      }
+    });
+  }
+});
+</script>
+
+{% endblock %}

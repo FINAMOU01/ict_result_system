@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Report — {{ semester.name }}{% endblock %}
+{% block content %}
+
+<style>
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 600; color: #6B7280;
+  text-decoration: none; margin-bottom: 1.25rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #1A4A8A; }
+
+.page-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+}
+.page-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem; font-weight: 700; color: #0F1C2E;
+}
+.export-buttons {
+  display: flex; gap: 0.75rem; flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.65rem 1.25rem; border-radius: 10px;
+  font-size: 0.82rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-primary { background: #1A4A8A; color: white; }
+.btn-primary:hover { background: #2563B0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,74,138,0.25); }
+.btn-success { background: #059669; color: white; }
+.btn-success:hover { background: #047857; transform: translateY(-1px); }
+
+.section-title {
+  font-size: 0.72rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-top: 2rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: #EEF2F8; }
+
+.stats-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.stat-card {
+  background: white; border-radius: 20px; border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  padding: 1.5rem; animation: fadeInUp 0.5s ease both;
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.stat-label {
+  font-size: 0.78rem; color: #6B7280; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;
+}
+.stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.8rem; font-weight: 700; color: #1A4A8A;
+}
+.stat-secondary {
+  font-size: 0.82rem; color: #059669; font-weight: 600; margin-top: 0.5rem;
+}
+
+.table-card {
+  background: white; border-radius: 20px; border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04); overflow: hidden;
+  margin-bottom: 1.5rem; animation: fadeInUp 0.5s ease both;
+}
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  padding: 0.75rem 1.25rem; text-align: left;
+  font-size: 0.68rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: #F8FAFF; border-bottom: 1px solid #EEF2F8;
+}
+.data-table td {
+  padding: 0.875rem 1.25rem; font-size: 0.82rem;
+  color: #0F1C2E; border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #FAFBFF; transition: background 0.15s; }
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 0.22rem 0.65rem; border-radius: 999px;
+  font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+.badge-pass { background: #ECFDF5; color: #065F46; }
+.badge-fail { background: #FEF2F2; color: #991B1B; }
+
+.grade-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600; text-align: center;
+}
+.score-cell {
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right; font-weight: 600;
+}
+
+.best-worst-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem; margin-bottom: 2rem;
+}
+.best-worst-card {
+  background: white; border-radius: 20px; border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  padding: 1.5rem; animation: fadeInUp 0.5s ease both;
+  position: relative; overflow: hidden;
+}
+.best-worst-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.best-worst-title { font-size: 0.78rem; color: #6B7280; font-weight: 700; margin-bottom: 0.75rem; }
+.best-worst-name {
+  font-size: 1.1rem; font-weight: 700; color: #0F1C2E; margin-bottom: 1rem;
+}
+.best-worst-metric {
+  font-size: 0.85rem; color: #6B7280; margin-bottom: 0.25rem;
+}
+.best-worst-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.5rem; font-weight: 700; color: #059669;
+}
+
+.course-breakdown-card {
+  background: white; border-radius: 20px; border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  padding: 1.5rem; margin-bottom: 1.5rem; animation: fadeInUp 0.5s ease both;
+  position: relative; overflow: hidden;
+}
+.course-breakdown-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.course-header {
+  font-size: 1.1rem; font-weight: 700; color: #0F1C2E; margin-bottom: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+.course-stats-inline {
+  display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem;
+  padding-bottom: 1rem; border-bottom: 1px solid #EEF2F8;
+}
+.course-stat-item {
+  display: flex; flex-direction: column;
+}
+.course-stat-label {
+  font-size: 0.78rem; color: #6B7280; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.course-stat-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.3rem; font-weight: 700; color: #1A4A8A; margin-top: 0.25rem;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- BACK LINK -->
+<a href="{% url 'registra_semester_history' %}" class="back-link">← Back to Semester History</a>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <h1 class="page-title">📊 Report — {{ semester.name }}</h1>
+  <div class="export-buttons">
+    <a href="/registra/semesters/{{ semester.id }}/report/pdf/" class="btn btn-success">📥 Download PDF</a>
+    <a href="{% url 'export_report_docx' semester.id %}" class="btn btn-success">📥 Download Word</a>
+  </div>
+</div>
+
+<!-- SEMESTER OVERVIEW STATS -->
+<div class="section-title">Semester Overview</div>
+<div class="stats-grid">
+  <div class="stat-card" style="animation-delay: 0s;">
+    <div class="stat-label">Total Courses</div>
+    <div class="stat-value">{{ stats.total_courses }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay: 0.05s;">
+    <div class="stat-label">Total Students</div>
+    <div class="stat-value">{{ stats.total_students }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay: 0.1s;">
+    <div class="stat-label">Students Graded</div>
+    <div class="stat-value">{{ stats.total_graded }}</div>
+  </div>
+  <div class="stat-card" style="animation-delay: 0.2s;">
+    <div class="stat-label">Pass Count</div>
+    <div class="stat-value">{{ stats.pass_count }}</div>
+    <div class="stat-secondary">{{ stats.pass_pct }}% pass rate</div>
+  </div>
+  <div class="stat-card" style="animation-delay: 0.3s;">
+    <div class="stat-label">Fail Count</div>
+    <div class="stat-value" style="color: #DC2626;">{{ stats.fail_count }}</div>
+    <div class="stat-secondary" style="color: #DC2626;">{{ stats.fail_pct }}% fail rate</div>
+  </div>
+</div>
+
+<!-- GLOBAL GRADE DISTRIBUTION -->
+<div class="section-title">Overall Grade Distribution</div>
+<div class="table-card">
+  <div style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Grade</th>
+          <th style="text-align:center;">GPA</th>
+          <th style="text-align:center;">Score Range</th>
+          <th style="text-align:right;">Count</th>
+          <th style="text-align:right;">Percentage</th>
+          <th style="text-align:center;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grade, count in stats.grade_counts.items %}
+        <tr>
+          <td class="grade-cell"><strong>{{ grade }}</strong></td>
+          <td style="text-align:center;">
+            {% if grade == 'A' %}4.0
+            {% elif grade == 'B+' %}3.5
+            {% elif grade == 'B' %}3.0
+            {% elif grade == 'C+' %}2.5
+            {% elif grade == 'C' %}2.0
+            {% elif grade == 'D+' %}1.5
+            {% elif grade == 'D' %}1.0
+            {% else %}0.0{% endif %}
+          </td>
+          <td style="text-align:center;">
+            {% if grade == 'A' %}80–100
+            {% elif grade == 'B+' %}70–79
+            {% elif grade == 'B' %}60–69
+            {% elif grade == 'C+' %}55–59
+            {% elif grade == 'C' %}50–54
+            {% elif grade == 'D+' %}45–49
+            {% elif grade == 'D' %}40–44
+            {% else %}0–39{% endif %}
+          </td>
+          <td class="score-cell">{{ count }}</td>
+          <td class="score-cell">{{ stats.grade_pcts|get_item:grade }}%</td>
+          <td style="text-align:center;">
+            {% if grade in 'AB+BC+C' %}
+              <span class="badge badge-pass">✓ PASS</span>
+            {% else %}
+              <span class="badge badge-fail">✗ FAIL</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- BEST AND WORST COURSES -->
+<div class="section-title">Performance Highlights</div>
+<div class="best-worst-grid">
+  {% if stats.best_course %}
+  <div class="best-worst-card" style="animation-delay: 0s;">
+    <div class="best-worst-title">🏆 Best Course</div>
+    <div class="best-worst-name">{{ stats.best_course.course.code }}</div>
+    <div class="best-worst-metric">Pass Rate</div>
+    <div class="best-worst-value">{{ stats.best_course.pass_pct }}%</div>
+    <div class="best-worst-metric" style="margin-top: 1rem; color: #0F1C2E;">{{ stats.best_course.pass_count }} / {{ stats.best_course.total_graded }} students</div>
+  </div>
+  {% endif %}
+  {% if stats.worst_course %}
+  <div class="best-worst-card" style="animation-delay: 0.1s;">
+    <div class="best-worst-title">⚠️ Most Difficult</div>
+    <div class="best-worst-name">{{ stats.worst_course.course.code }}</div>
+    <div class="best-worst-metric">Pass Rate</div>
+    <div class="best-worst-value">{{ stats.worst_course.pass_pct }}%</div>
+    <div class="best-worst-metric" style="margin-top: 1rem; color: #0F1C2E;">{{ stats.worst_course.pass_count }} / {{ stats.worst_course.total_graded }} students</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- PER-COURSE BREAKDOWN -->
+<div class="section-title">Course Breakdown</div>
+{% for cs in stats.course_stats %}
+<div class="course-breakdown-card" style="animation-delay: {{ forloop.counter0|add:0.05 }}s;">
+  <div class="course-header">{{ cs.course.code }} — {{ cs.course.name }}</div>
+  
+  <div class="course-stats-inline">
+    <div class="course-stat-item">
+      <div class="course-stat-label">Total Graded</div>
+      <div class="course-stat-value">{{ cs.total_graded }}</div>
+    </div>
+    <div class="course-stat-item">
+      <div class="course-stat-label">Pass</div>
+      <div class="course-stat-value" style="color: #059669;">{{ cs.pass_count }} ({{ cs.pass_pct }}%)</div>
+    </div>
+    <div class="course-stat-item">
+      <div class="course-stat-label">Fail</div>
+      <div class="course-stat-value" style="color: #DC2626;">{{ cs.fail_count }} ({{ cs.fail_pct }}%)</div>
+    </div>
+    <div class="course-stat-item">
+      <div class="course-stat-label">Avg GPA</div>
+      <div class="course-stat-value">{{ cs.average_gpa }}</div>
+    </div>
+  </div>
+
+  <div style="overflow-x:auto;">
+    <table class="data-table" style="font-size: 0.75rem;">
+      <thead>
+        <tr>
+          <th>Grade</th>
+          <th style="text-align:right;">Count</th>
+          <th style="text-align:right;">%</th>
+          <th>GPA</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for grade, count in cs.grade_counts.items %}
+        <tr>
+          <td class="grade-cell"><strong>{{ grade }}</strong></td>
+          <td class="score-cell">{{ count }}</td>
+          <td class="score-cell">{{ cs.grade_pcts|get_item:grade }}%</td>
+          <td style="text-align:center;">
+            {% if grade == 'A' %}4.0
+            {% elif grade == 'B+' %}3.5
+            {% elif grade == 'B' %}3.0
+            {% elif grade == 'C+' %}2.5
+            {% elif grade == 'C' %}2.0
+            {% elif grade == 'D+' %}1.5
+            {% elif grade == 'D' %}1.0
+            {% else %}0.0{% endif %}
+          </td>
+          <td style="text-align:center;">
+            {% if grade in 'AB+BC+C' %}
+              <span class="badge badge-pass">PASS</span>
+            {% else %}
+              <span class="badge badge-fail">FAIL</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Custom filter for dict access in templates -->
+<script>
+// Note: Template filter 'get_item' defined in custom_filters.py
+</script>
+
+{% endblock %}

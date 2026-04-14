@@ -1,17 +1,17 @@
 {% extends 'admin_panel/base_admin.html' %}
 
-{% block title %}Create User Account{% endblock %}
-{% block page_title %}Create <span class="highlight">User Account</span>{% endblock %}
+{% block title %}Edit User Account{% endblock %}
+{% block page_title %}Edit <span class="highlight">User Account</span>{% endblock %}
 
 {% block content %}
 <div style="max-width: 700px; margin: 0 auto;">
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">New User Account</h3>
+            <h3 class="card-title">Edit User: {{ user.get_full_name }}</h3>
         </div>
         <div style="padding: 2rem;">
             <p style="color: #6B7280; margin-bottom: 1.5rem; font-size: 0.9rem;">
-                Create an account for a System Admin, Registra, or Professor.
+                Update user information and role. Note: Username cannot be changed.
             </p>
 
             {% if form.non_field_errors %}
@@ -59,20 +59,6 @@
                         <label class="form-label">Phone</label>
                         {{ form.phone }}
                     </div>
-
-                    <!-- Password -->
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        {{ form.password1 }}
-                        {% if form.password1.errors %}<div style="color:#DC2626;font-size:0.75rem;margin-top:0.3rem;">{{ form.password1.errors|first }}</div>{% endif %}
-                    </div>
-
-                    <!-- Confirm Password -->
-                    <div class="form-group">
-                        <label class="form-label">Confirm Password</label>
-                        {{ form.password2 }}
-                        {% if form.password2.errors %}<div style="color:#DC2626;font-size:0.75rem;margin-top:0.3rem;">{{ form.password2.errors|first }}</div>{% endif %}
-                    </div>
                 </div>
 
                 <!-- Department (full width) -->
@@ -83,8 +69,8 @@
 
                 <!-- Form Actions -->
                 <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">✓ Create Account</button>
-                    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline" style="flex: 1;">Cancel</a>
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">✓ Save Changes</button>
+                    <a href="{% url 'user_list' %}" class="btn btn-outline" style="flex: 1;">Cancel</a>
                 </div>
             </form>
         </div>
