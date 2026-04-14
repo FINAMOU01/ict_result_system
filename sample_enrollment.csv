@@ -1,9 +1,53 @@
 Course Name,First Name,Last Name,Admission Number,ICTU Email
-FA25-MSC-ICT7114 IT Strategic Planning and Management,Jean,Mvondo,ICTU20212339,jean.mvondo@ictu.edu.cm
-FA25-MSC-ICT7114 IT Strategic Planning and Management,Marie,Biya,ICTU20212340,marie.biya@ictu.edu.cm
-FA25-MSC-ICT7115 Advanced Cybersecurity,Rodrigue,Abena,ICTU20212341,rodrigue.abena@ictu.edu.cm
-FA25-BSC-CS201 Data Structures,Alice,Fouda,ICTU20210150,alice.fouda@ictu.edu.cm
-FA25-BSC-CS201 Data Structures,Patrick,Essomba,ICTU20210151,patrick.essomba@ictu.edu.cm
-SP25-PHD-DRES501 Research Methodology,Rachel,Ngono,ICTU20225001,rachel.ngono@ictu.edu.cm
-SP25-PHD-DRES501 Research Methodology,Kevin,Mfou,ICTU20225002,kevin.mfou@ictu.edu.cm
-SP25-MBA-BUS402 Organizational Management,Sophie,Ebene,ICTU20215010,sophie.ebene@ictu.edu.cm
+SP26-MSC-ICT7114 IT Strategic Planning and Management,Jean,Mvondo,ICTU20212339,jean.mvondo@ictu.edu.cm
+SP26-MSC-ICT7114 IT Strategic Planning and Management,Marie,Biya,ICTU20212340,marie.biya@ictu.edu.cm
+SP26-MSC-ICT7114 IT Strategic Planning and Management,Rodrigue,Abena,ICTU20212341,rodrigue.abena@ictu.edu.cm
+SP26-MSC-ICT7114 IT Strategic Planning and Management,Sophie,Ebene,ICTU20212342,sophie.ebene@ictu.edu.cm
+SP26-MSC-ICT7114 IT Strategic Planning and Management,Marc,Etoni,ICTU20212343,marc.etoni@ictu.edu.cm
+SP26-MSC-ICT7114 IT Strategic Planning and Management,Alice,Fouda,ICTU20212344,alice.fouda@ictu.edu.cm
+SP26-MSC-ICT7115 Advanced Cybersecurity,Patrick,Essomba,ICTU20212345,patrick.essomba@ictu.edu.cm
+SP26-MSC-ICT7115 Advanced Cybersecurity,Rachel,Ngono,ICTU20212346,rachel.ngono@ictu.edu.cm
+SP26-MSC-ICT7115 Advanced Cybersecurity,Kevin,Mfou,ICTU20212347,kevin.mfou@ictu.edu.cm
+SP26-MSC-ICT7115 Advanced Cybersecurity,Denise,Koumbit,ICTU20212348,denise.koumbit@ictu.edu.cm
+SP26-MSC-ICT7115 Advanced Cybersecurity,Paul,Nkameni,ICTU20212349,paul.nkameni@ictu.edu.cm
+SP26-MSC-ICT7115 Advanced Cybersecurity,Lisa,Ekonde,ICTU20212350,lisa.ekonde@ictu.edu.cm
+SP26-MSC-ICT7116 Cloud Computing Architectures,Carl,Yembo,ICTU20212351,carl.yembo@ictu.edu.cm
+SP26-MSC-ICT7116 Cloud Computing Architectures,Grace,Menyonga,ICTU20212352,grace.menyonga@ictu.edu.cm
+SP26-MSC-ICT7116 Cloud Computing Architectures,Victor,Talla,ICTU20212353,victor.talla@ictu.edu.cm
+SP26-MSC-ICT7116 Cloud Computing Architectures,Ahmed,Sanda,ICTU20210150,ahmed.sanda@ictu.edu.cm
+SP26-MSC-ICT7116 Cloud Computing Architectures,Bernadette,Moma,ICTU20210151,bernadette.moma@ictu.edu.cm
+SP26-BSC-CS201 Data Structures,Claude,Zando,ICTU20210152,claude.zando@ictu.edu.cm
+SP26-BSC-CS201 Data Structures,Diana,Kollo,ICTU20210153,diana.kollo@ictu.edu.cm
+SP26-BSC-CS201 Data Structures,Emmanuel,Bah,ICTU20210154,emmanuel.bah@ictu.edu.cm
+SP26-BSC-CS201 Data Structures,Fatima,Sow,ICTU20210155,fatima.sow@ictu.edu.cm
+SP26-BSC-CS201 Data Structures,George,Toula,ICTU20210156,george.toula@ictu.edu.cm
+SP26-BSC-CS202 Algorithms and Complexity,Helene,Nsah,ICTU20210157,helene.nsah@ictu.edu.cm
+SP26-BSC-CS202 Algorithms and Complexity,Ibrahim,Zolo,ICTU20210158,ibrahim.zolo@ictu.edu.cm
+SP26-BSC-CS202 Algorithms and Complexity,Josephine,Manti,ICTU20210159,josephine.manti@ictu.edu.cm
+SP26-BSC-CS202 Algorithms and Complexity,Kevin,Assala,ICTU20210160,kevin.assala@ictu.edu.cm
+SP26-BSC-CS202 Algorithms and Complexity,Laurence,Ndey,ICTU20210161,laurence.ndey@ictu.edu.cm
+SP26-PHD-DRES501 Research Methodology,Monique,Fosso,ICTU20225003,monique.fosso@ictu.edu.cm
+SP26-PHD-DRES501 Research Methodology,Nicolas,Ewane,ICTU20225004,nicolas.ewane@ictu.edu.cm
+SP26-PHD-DRES501 Research Methodology,Odette,Kabuya,ICTU20225005,odette.kabuya@ictu.edu.cm
+SP26-PHD-DRES501 Research Methodology,Patricia,Legum,ICTU20225006,patricia.legum@ictu.edu.cm
+SP26-PHD-DRES501 Research Methodology,Quentin,Bih,ICTU20225007,quentin.bih@ictu.edu.cm
+SP26-PHD-DRES502 Advanced Analytics,Rebecca,Tayo,ICTU20225008,rebecca.tayo@ictu.edu.cm
+SP26-PHD-DRES502 Advanced Analytics,Samuel,Mbi,ICTU20225009,samuel.mbi@ictu.edu.cm
+SP26-PHD-DRES502 Advanced Analytics,Therese,Nkwenti,ICTU20225010,therese.nkwenti@ictu.edu.cm
+SP26-PHD-DRES502 Advanced Analytics,Ulrich,Eko,ICTU20225011,ulrich.eko@ictu.edu.cm
+SP26-PHD-DRES502 Advanced Analytics,Vivienne,Yonn,ICTU20225012,vivienne.yonn@ictu.edu.cm
+SP26-MBA-BUS402 Organizational Management,William,Fuhren,ICTU20215003,william.fuhren@ictu.edu.cm
+SP26-MBA-BUS402 Organizational Management,Ximena,Bona,ICTU20215004,ximena.bona@ictu.edu.cm
+SP26-MBA-BUS402 Organizational Management,Yasmine,Kiwi,ICTU20215005,yasmine.kiwi@ictu.edu.cm
+SP26-MBA-BUS402 Organizational Management,Zacharie,Sama,ICTU20215006,zacharie.sama@ictu.edu.cm
+SP26-MBA-BUS402 Organizational Management,Amelie,Gombe,ICTU20215007,amelie.gombe@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Bruno,Kondo,ICTU20215008,bruno.kondo@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Camille,Toussaint,ICTU20215009,camille.toussaint@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Dominique,Ledan,ICTU20215010,dominique.ledan@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Estelle,Njoman,ICTU20215011,estelle.njoman@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Fabrice,Obam,ICTU20215012,fabrice.obam@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Gerard,Yung,ICTU20215013,gerard.yung@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Heloise,Mfundo,ICTU20215014,heloise.mfundo@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Ismael,Bache,ICTU20215015,ismael.bache@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Justine,Manga,ICTU20215016,justine.manga@ictu.edu.cm
+SP26-MBA-BUS403 Financial Management,Karine,Messi,ICTU20215017,karine.messi@ictu.edu.cm

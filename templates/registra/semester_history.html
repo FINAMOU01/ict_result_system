@@ -230,6 +230,21 @@
   </div>
 
   <div class="accordion-body">
+    <!-- Report Button (shown if semester has decoded courses) -->
+    {% if decoded_count > 0 %}
+      <div style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a href="{% url 'registra_semester_report' semester.id %}" class="btn btn-primary" style="gap:0.5rem;">
+          📊 View Report
+        </a>
+        <a href="{% url 'export_report_pdf' semester.id %}" class="btn btn-success" style="gap:0.5rem;">
+          📥 Download PDF
+        </a>
+        <a href="{% url 'export_report_docx' semester.id %}" class="btn btn-info" style="gap:0.5rem;">
+          📄 Download Word
+        </a>
+      </div>
+    {% endif %}
+    
     <div style="overflow-x:auto;">
       <table class="data-table">
         <thead>

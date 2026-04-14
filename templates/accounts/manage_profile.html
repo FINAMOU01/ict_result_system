@@ -1,0 +1,164 @@
+{% extends 'admin_panel/base_admin.html' %}
+
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My <span class="highlight">Profile</span>{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">My Profile</h3>
+        </div>
+        <div style="padding: 2rem;">
+            <!-- Personal Information -->
+            <div style="background: #F8FAFF; border-radius: 12px; padding: 2rem; margin-bottom: 2rem;">
+                <h4 style="font-size: 1.1rem; font-weight: 700; color: #0F1C2E; margin-bottom: 1.5rem;">Personal Information</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <!-- Full Name -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 0.5rem;">Full Name</label>
+                        <div style="font-size: 1rem; color: #0F1C2E; font-weight: 500;">{{ user.get_full_name }}</div>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 0.5rem;">Email Address</label>
+                        <div style="font-size: 1rem; color: #0F1C2E; font-weight: 500;">{{ user.email }}</div>
+                    </div>
+
+                    <!-- Role -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 0.5rem;">Role</label>
+                        <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                            <span class="badge {% if user.role == 'admin' %}badge-coded{% elif user.role == 'registra' %}badge-bachelor{% else %}badge-pending{% endif %}">
+                                {{ user.get_role_display }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div>
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 0.5rem;">Phone</label>
+                        <div style="font-size: 1rem; color: #0F1C2E; font-weight: 500;">{{ user.phone|default:"—" }}</div>
+                    </div>
+
+                    <!-- Department -->
+                    <div style="grid-column: 1 / -1;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #6B7280; display: block; margin-bottom: 0.5rem;">Department</label>
+                        <div style="font-size: 1rem; color: #0F1C2E; font-weight: 500;">{{ user.department|default:"—" }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Security -->
+            <div style="background: #FEF2F2; border-radius: 12px; padding: 2rem;">
+                <h4 style="font-size: 1.1rem; font-weight: 700; color: #881B1B; margin-bottom: 1.5rem;">🔐 Account Security</h4>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <!-- Change Email -->
+                    <a href="{% url 'change_email' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; text-decoration: none; text-align: center;">
+                        📧 Change Email
+                    </a>
+
+                    <!-- Change Password -->
+                    <a href="{% url 'change_password' %}" class="btn btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; text-decoration: none; text-align: center;">
+                        🔑 Change Password
+                    </a>
+                </div>
+            </div>
+
+            <!-- Back Button -->
+            <div style="margin-top: 2rem;">
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline">← Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        background: white;
+        border-radius: 20px;
+        border: 1px solid #EEF2F8;
+        box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+        overflow: hidden;
+    }
+    
+    .card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #EEF2F8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .card-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #0F1C2E;
+        margin: 0;
+    }
+    
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    
+    .badge-coded {
+        background: #D1FAE5;
+        color: #047857;
+    }
+    
+    .badge-bachelor {
+        background: #DBEAFE;
+        color: #1E40AF;
+    }
+    
+    .badge-pending {
+        background: #FEF3C7;
+        color: #92400E;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.65rem 1.25rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'DM Sans', sans-serif;
+    }
+    
+    .btn-primary {
+        background: #1A4A8A;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: #2563B0;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(26,74,138,0.25);
+    }
+    
+    .btn-outline {
+        background: transparent;
+        color: #1A4A8A;
+        border: 2px solid #1A4A8A;
+    }
+    
+    .btn-outline:hover {
+        background: #EFF6FF;
+    }
+</style>
+{% endblock %}

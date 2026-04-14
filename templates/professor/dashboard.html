@@ -277,6 +277,20 @@
     </div>
 </div>
 
+<!-- CA MARKS TEMPLATE SECTION -->
+<div style="background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); border-radius: 15px; padding: 2rem; margin-bottom: 2.5rem; border-left: 5px solid var(--blue-deep); animation: fadeInUp 0.6s ease-out 0.1s both;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap;">
+        <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--ict-navy); margin-bottom: 0.5rem;">📋 CA Marks Template</h3>
+            <p style="color: #6B7280; font-size: 0.95rem; margin-bottom: 0.5rem;">Download a ready-to-use template with all your student information</p>
+            <p style="color: #6B7280; font-size: 0.9rem; margin: 0;">Edit the CA Score column (0-30) and submit the file on the course grade page</p>
+        </div>
+        <a href="{% url 'download_ca_template' %}" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--blue-deep); color: white; padding: 0.75rem 1.25rem; border-radius: 10px; text-decoration: none; font-weight: 600; transition: all 0.3s ease; white-space: nowrap;" onmouseover="this.style.background='#1A4A8A'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(26,74,138,0.3)';" onmouseout="this.style.background='var(--blue-deep)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <i class="bi bi-download"></i>Download Template
+        </a>
+    </div>
+</div>
+
 <div class="course-grid">
     {% for course in courses %}
     <div class="course-card">

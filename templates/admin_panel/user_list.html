@@ -14,7 +14,6 @@
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Username</th>
                     <th>Email</th>
                     <th>Role</th>
                     <th>Department</th>
@@ -26,7 +25,6 @@
                 {% for u in users %}
                 <tr>
                     <td><strong>{{ u.get_full_name }}</strong></td>
-                    <td><code style="font-family:'JetBrains Mono',monospace;color:#1A4A8A;font-size:0.78rem;">{{ u.username }}</code></td>
                     <td style="font-size:0.85rem;">{{ u.email|default:"—" }}</td>
                     <td>
                         <span class="badge {% if u.role == 'admin' %}badge-coded{% elif u.role == 'registra' %}badge-bachelor{% else %}badge-pending{% endif %}">
@@ -42,17 +40,22 @@
                         {% endif %}
                     </td>
                     <td>
-                        <form method="post" action="{% url 'toggle_user_active' u.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline" style="font-size:0.7rem;padding:0.3rem 0.6rem;">
-                                {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
-                            </button>
-                        </form>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="{% url 'edit_user' u.id %}" class="btn btn-sm btn-outline" style="font-size:0.7rem;padding:0.3rem 0.6rem;">
+                                ✎ Edit
+                            </a>
+                            <form method="post" action="{% url 'toggle_user_active' u.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline" style="font-size:0.7rem;padding:0.3rem 0.6rem;">
+                                    {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="7" style="text-align:center;padding:2rem 1.5rem;color:#6B7280;">
+                    <td colspan="6" style="text-align:center;padding:2rem 1.5rem;color:#6B7280;">
                         🔑 No users created yet
                     </td>
                 </tr>

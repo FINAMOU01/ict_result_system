@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.db import transaction
 from django.contrib import messages
 from academics.models import Course
+from academics.utils import get_grade
 from results.models import AnonymousCode, Grade
 from academics.views import role_required
 
@@ -53,10 +54,13 @@ def decode_results(request, course_id):
             final = grade.final_grade
             mention = grade.mention
             status = grade.status
+            # Get is_pass based on final score using get_grade function
+            _, _, is_pass = get_grade(final) if final is not None else (None, None, None)
         except Grade.DoesNotExist:
             cc = sn = final = None
             mention = '-'
             status = 'non noté'
+            is_pass = None
 
         decoded_data.append({
             'matricule': student.matricule,
@@ -68,6 +72,7 @@ def decode_results(request, course_id):
             'final': final,
             'mention': mention,
             'status': status,
+            'is_pass': is_pass,
         })
 
     # Mark as decoded

@@ -1,0 +1,308 @@
+{% load custom_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Academic Report — {{ semester.name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            color: #0F1C2E;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #1A4A8A;
+        }
+        .header h1 {
+            font-size: 2em;
+            color: #1A4A8A;
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            font-size: 1em;
+            color: #6B7280;
+        }
+        .section {
+            margin: 2rem 0;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1A4A8A;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #EEF2F8;
+            padding-bottom: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th {
+            background-color: #F8FAFF;
+            color: #0F1C2E;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #EEF2F8;
+            font-size: 0.9em;
+        }
+        td {
+            padding: 0.75rem;
+            border: 1px solid #EEF2F8;
+            font-size: 0.9em;
+        }
+        tr:nth-child(even) {
+            background-color: #F9FAFB;
+        }
+        tr:hover {
+            background-color: #FAFBFF;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-align: center;
+        }
+        .badge-pass {
+            background-color: #ECFDF5;
+            color: #065F46;
+        }
+        .badge-fail {
+            background-color: #FEF2F2;
+            color: #991B1B;
+        }
+        .stats-table {
+            width: 100%;
+        }
+        .stats-table td {
+            padding: 0.5rem 1rem;
+        }
+        .stats-table tr:nth-child(odd) {
+            background-color: #F9FAFB;
+        }
+        .course-section {
+            margin: 1.5rem 0;
+            page-break-inside: avoid;
+            background-color: #FAFBFF;
+            padding: 1rem;
+            border-left: 4px solid #D4500A;
+        }
+        .course-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #0F1C2E;
+            margin-bottom: 0.75rem;
+            font-family: monospace;
+        }
+        .course-stats {
+            display: table;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .course-stat {
+            display: table-row;
+        }
+        .course-stat-label {
+            display: table-cell;
+            width: 30%;
+            font-weight: bold;
+            color: #6B7280;
+            padding: 0.25rem 0.5rem;
+            border-bottom: 1px solid #EEF2F8;
+        }
+        .course-stat-value {
+            display: table-cell;
+            width: 70%;
+            padding: 0.25rem 0.5rem;
+            border-bottom: 1px solid #EEF2F8;
+            font-family: monospace;
+            font-weight: bold;
+            color: #0F1C2E;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .score-cell {
+            text-align: right;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .grade-cell {
+            text-align: center;
+            font-family: monospace;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <h1>ICT University</h1>
+        <h2>Academic Report — {{ semester.name }}</h2>
+        <p>Generated: {% now "d F Y" %}</p>
+    </div>
+
+    <!-- SEMESTER OVERVIEW -->
+    <div class="section">
+        <div class="section-title">Semester Overview</div>
+        <table class="stats-table">
+            <tr>
+                <td><strong>Total Courses</strong></td>
+                <td style="text-align:right;">{{ stats.total_courses }}</td>
+            </tr>
+            <tr>
+                <td><strong>Total Students Graded</strong></td>
+                <td style="text-align:right;">{{ stats.total_graded }}</td>
+            </tr>
+            <tr>
+                <td><strong>Pass Count</strong></td>
+                <td style="text-align:right;">{{ stats.pass_count }} ({{ stats.pass_pct }}%)</td>
+            </tr>
+            <tr>
+                <td><strong>Fail Count</strong></td>
+                <td style="text-align:right;">{{ stats.fail_count }} ({{ stats.fail_pct }}%)</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- GLOBAL GRADE DISTRIBUTION -->
+    <div class="section">
+        <div class="section-title">Overall Grade Distribution</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Grade</th>
+                    <th style="text-align:center;">GPA</th>
+                    <th style="text-align:center;">Score Range</th>
+                    <th style="text-align:right;">Count</th>
+                    <th style="text-align:right;">Percentage</th>
+                    <th style="text-align:center;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grade, count in stats.grade_counts.items %}
+                <tr>
+                    <td class="grade-cell"><strong>{{ grade }}</strong></td>
+                    <td style="text-align:center;">
+                        {% if grade == 'A' %}4.0
+                        {% elif grade == 'B+' %}3.5
+                        {% elif grade == 'B' %}3.0
+                        {% elif grade == 'C+' %}2.5
+                        {% elif grade == 'C' %}2.0
+                        {% elif grade == 'D+' %}1.5
+                        {% elif grade == 'D' %}1.0
+                        {% else %}0.0{% endif %}
+                    </td>
+                    <td style="text-align:center;">
+                        {% if grade == 'A' %}80–100
+                        {% elif grade == 'B+' %}70–79
+                        {% elif grade == 'B' %}60–69
+                        {% elif grade == 'C+' %}55–59
+                        {% elif grade == 'C' %}50–54
+                        {% elif grade == 'D+' %}45–49
+                        {% elif grade == 'D' %}40–44
+                        {% else %}0–39{% endif %}
+                    </td>
+                    <td class="score-cell">{{ count }}</td>
+                    <td class="score-cell">{{ stats.grade_pcts|get_item:grade }}%</td>
+                    <td style="text-align:center;">
+                        {% if grade in 'AB+BC+C' %}
+                            <span class="badge badge-pass">PASS</span>
+                        {% else %}
+                            <span class="badge badge-fail">FAIL</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGE BREAK -->
+    <div class="page-break"></div>
+
+    <!-- PER-COURSE BREAKDOWN -->
+    <div class="section">
+        <div class="section-title">Course Breakdown</div>
+        
+        {% for cs in stats.course_stats %}
+        <div class="course-section">
+            <div class="course-title">{{ cs.course.code }} — {{ cs.course.name }}</div>
+            
+            <div class="course-stats">
+                <div class="course-stat">
+                    <div class="course-stat-label">Total Enrolled</div>
+                    <div class="course-stat-value">{{ cs.total_enrolled }}</div>
+                </div>
+                <div class="course-stat">
+                    <div class="course-stat-label">Total Graded</div>
+                    <div class="course-stat-value">{{ cs.total_graded }}</div>
+                </div>
+                <div class="course-stat">
+                    <div class="course-stat-label">Pass</div>
+                    <div class="course-stat-value">{{ cs.pass_count }} ({{ cs.pass_pct }}%)</div>
+                </div>
+                <div class="course-stat">
+                    <div class="course-stat-label">Fail</div>
+                    <div class="course-stat-value">{{ cs.fail_count }} ({{ cs.fail_pct }}%)</div>
+                </div>
+                <div class="course-stat">
+                    <div class="course-stat-label">Average GPA</div>
+                    <div class="course-stat-value">{{ cs.average_gpa }}</div>
+                </div>
+            </div>
+
+            <table style="font-size: 0.85em;">
+                <thead>
+                    <tr>
+                        <th>Grade</th>
+                        <th style="text-align:right;">Count</th>
+                        <th style="text-align:right;">%</th>
+                        <th style="text-align:center;">GPA</th>
+                        <th style="text-align:center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grade, count in cs.grade_counts.items %}
+                    <tr>
+                        <td class="grade-cell"><strong>{{ grade }}</strong></td>
+                        <td class="score-cell">{{ count }}</td>
+                        <td class="score-cell">{{ cs.grade_pcts|get_item:grade }}%</td>
+                        <td style="text-align:center;">
+                            {% if grade == 'A' %}4.0
+                            {% elif grade == 'B+' %}3.5
+                            {% elif grade == 'B' %}3.0
+                            {% elif grade == 'C+' %}2.5
+                            {% elif grade == 'C' %}2.0
+                            {% elif grade == 'D+' %}1.5
+                            {% elif grade == 'D' %}1.0
+                            {% else %}0.0{% endif %}
+                        </td>
+                        <td style="text-align:center;">
+                            {% if grade in 'AB+BC+C' %}
+                                <span class="badge badge-pass">PASS</span>
+                            {% else %}
+                                <span class="badge badge-fail">FAIL</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="section" style="margin-top: 3rem; text-align: center; color: #6B7280; font-size: 0.9em;">
+        <p>This report contains confidential academic information. Please handle with appropriate care.</p>
+    </div>
+</body>
+</html>

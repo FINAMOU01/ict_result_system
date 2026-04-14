@@ -8,8 +8,8 @@ class SemesterForm(forms.ModelForm):
         model = Semester
         fields = ['name', 'academic_year', 'is_active']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. S1-2025'}),
-            'academic_year': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 2024-2025'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Spring 2026(MArch)'}),
+            'academic_year': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 2025-2026'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 

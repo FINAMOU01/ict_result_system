@@ -5,7 +5,6 @@ urlpatterns = [
     path('', views.dashboard_redirect, name='dashboard'),
     # Admin
     path('admin-panel/', views.admin_dashboard, name='admin_dashboard'),
-    path('admin-panel/reset-demo-data/', views.reset_demo_data, name='reset_demo_data'),
     path('admin-panel/activity-log/', views.activity_log, name='activity_log'),
     path('admin-panel/semesters/', views.semester_list, name='semester_list'),
     path('admin-panel/semesters/<int:semester_id>/edit/', views.semester_edit, name='semester_edit'),
@@ -20,9 +19,14 @@ urlpatterns = [
     # Registra
     path('registra/', views.registra_dashboard, name='registra_dashboard'),
     path('registra/semester-history/', views.registra_semester_history, name='registra_semester_history'),
+    path('registra/semesters/<int:semester_id>/report/', views.registra_semester_report, name='registra_semester_report'),
+    path('registra/semesters/<int:semester_id>/report/pdf/', views.export_report_pdf, name='export_report_pdf'),
+    path('registra/semesters/<int:semester_id>/report/docx/', views.export_report_docx, name='export_report_docx'),
     path('registra/admissions/', views.admissions_registry, name='admissions_registry_registra'),
     path('registra/course/<int:course_id>/', views.registra_course_detail, name='registra_course_detail'),
     path('registra/course/<int:course_id>/add-from-admissions/', views.add_from_admissions, name='add_from_admissions'),
+    path('registra/course/<int:course_id>/search-admitted/', views.search_admitted_students, name='search_admitted_students'),
+    path('registra/course/<int:course_id>/add-admitted/', views.add_from_admissions_ajax, name='add_from_admissions_ajax'),
     path('registra/course/<int:course_id>/add-walkin/', views.add_walkin_student, name='add_walkin_student'),
     path('registra/course/<int:course_id>/add-student/', views.add_student_to_coded_course, name='add_student_to_coded_course'),
     path('registra/course/<int:course_id>/code/', views.generate_codes, name='generate_codes'),
@@ -35,5 +39,11 @@ urlpatterns = [
     path('registra/course/<int:course_id>/download/', views.download_decoded_results, name='download_decoded_results'),
     # Professor
     path('professor/', views.professor_dashboard, name='professor_dashboard'),
+    path('professor/download-ca-template/', views.download_ca_template, name='download_ca_template'),
     path('professor/course/<int:course_id>/grades/', views.professor_grade_course, name='professor_grade_course'),
+    path('professor/course/<int:course_id>/download-coded-list/', views.download_coded_list, name='download_coded_list'),
+    path('professor/courses/<int:course_id>/import-ca-marks/', views.import_ca_marks, name='import_ca_marks'),
+    path('professor/course/<int:course_id>/submit-cc/', views.submit_cc_scores, name='submit_cc_scores'),
+    path('professor/course/<int:course_id>/submit-sn/', views.submit_sn_scores, name='submit_sn_scores'),
+    path('professor/courses/<int:course_id>/import-sn-marks/', views.import_sn_marks, name='import_sn_marks'),
 ]

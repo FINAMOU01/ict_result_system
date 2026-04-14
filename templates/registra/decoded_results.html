@@ -199,8 +199,9 @@
           <th style="width:15%;">Matricule</th>
           <th style="width:20%;">Email</th>
           <th style="width:8%;">Att<small>/10</small></th>
-          <th style="width:8%;">CC<small>/20</small></th>
-          <th style="width:8%;">SN<small>/70</small></th>
+          <th style="width:8%;">Asg<small>/20</small></th>
+          <th style="width:8%;">CA<small>/30</small></th>
+          <th style="width:8%;">Final<small>/70</small></th>
           <th style="width:10%;">Final<small>/100</small></th>
           <th style="width:10%;">Status</th>
           <th style="width:8%;">Grade</th>
@@ -226,6 +227,15 @@
             <div class="score-cell">
               {% if enrollment.grade.attendance_score is not None %}
                 {{ enrollment.grade.attendance_score }}
+              {% else %}
+                <span class="score-empty">—</span>
+              {% endif %}
+            </div>
+          </td>
+          <td>
+            <div class="score-cell">
+              {% if enrollment.grade.assignment_score is not None %}
+                {{ enrollment.grade.assignment_score }}
               {% else %}
                 <span class="score-empty">—</span>
               {% endif %}

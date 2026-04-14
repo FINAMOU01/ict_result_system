@@ -90,18 +90,18 @@
                     <td>{{ row.cc|default:'—' }}</td>
                     <td>{{ row.sn|default:'—' }}</td>
                     <td>
-                        <strong style="font-size:16px; color:{% if row.final and row.final >= 10 %}var(--success){% elif row.final %}var(--danger){% else %}var(--gray-400){% endif %}">
+                        <strong style="font-size:16px; color:{% if row.is_pass %}var(--success){% elif row.final %}var(--danger){% else %}var(--gray-400){% endif %}">
                             {{ row.final|default:'—' }}
                         </strong>
                     </td>
                     <td>
-                        <span class="badge {% if row.final and row.final >= 10 %}badge-success{% elif row.final %}badge-danger{% else %}badge-navy{% endif %}">
+                        <span class="badge {% if row.is_pass %}badge-success{% elif row.final %}badge-danger{% else %}badge-navy{% endif %}">
                             {{ row.mention }}
                         </span>
                     </td>
                     <td>
                         {% if row.final %}
-                            {% if row.final >= 10 %}
+                            {% if row.is_pass %}
                             <span class="badge badge-success">ADMIS</span>
                             {% else %}
                             <span class="badge badge-danger">RECALÉ</span>

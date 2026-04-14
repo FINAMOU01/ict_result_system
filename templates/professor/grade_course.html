@@ -1,694 +1,789 @@
 {% extends 'base.html' %}
-{% block title %}Grade — {{ course.code }}{% endblock %}
-{% block page_title %}{{ course.code }}: {{ course.name }}{% endblock %}
-
-{% block extra_css %}
-<style>
-    .grade-page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2.5rem;
-        animation: fadeInUp 0.6s ease-out;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    .grade-page-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: var(--ict-navy);
-    }
-    .grade-page-subtitle {
-        color: #6B7280;
-        font-size: 0.95rem;
-    }
-    .back-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: var(--blue-deep);
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        margin-bottom: 1rem;
-    }
-    .back-link:hover {
-        color: var(--ict-navy);
-        text-decoration: underline;
-    }
-    .course-meta {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-    }
-    .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #6B7280;
-        font-size: 0.95rem;
-    }
-    .meta-item i {
-        color: var(--blue-deep);
-        font-size: 1.1rem;
-    }
-    .meta-badge {
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 0.4rem 0.8rem;
-        border-radius: 8px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .meta-badge-level-100 { background-color: #FEF3E2; color: #F59E0B; }
-    .meta-badge-level-200 { background-color: #DBEAFE; color: #0284C7; }
-    .meta-badge-level-300 { background-color: #D1FAE5; color: #059669; }
-    .meta-badge-level-400 { background-color: #FCE7F3; color: #DB2777; }
-    .status-submitted {
-        background: linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%);
-        color: #166534;
-        padding: 0.75rem 1.25rem;
-        border-radius: 12px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        font-size: 0.9rem;
-    }
-    .alert-instructions {
-        background: linear-gradient(135deg, #DBEAFE 0%, #BAE6FD 100%);
-        border: 2px solid #0284C7;
-        border-radius: 15px;
-        padding: 1.5rem;
-        color: #0c4a6e;
-        margin-bottom: 2.5rem;
-        animation: fadeInUp 0.6s ease-out 0.1s both;
-    }
-    .alert-instructions i {
-        color: #0284C7;
-        font-size: 1.3rem;
-        flex-shrink: 0;
-    }
-    .alert-instructions strong {
-        color: #0c4a6e;
-        font-weight: 700;
-    }
-    .alert-instructions-content {
-        display: flex;
-        gap: 1rem;
-    }
-    .alert-instructions-text {
-        flex: 1;
-    }
-    .alert-instructions-formula {
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid #0284C7;
-        font-size: 0.9rem;
-    }
-    .grading-table-section {
-        animation: fadeInUp 0.6s ease-out 0.2s both;
-    }
-    .table-header {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--ict-navy);
-        margin-bottom: 1.5rem;
-    }
-    .grading-table {
-        background: white;
-        border: 2px solid #EEF2F8;
-        border-radius: 18px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(13, 46, 94, 0.08);
-        margin-bottom: 2rem;
-    }
-    .grading-table table {
-        margin-bottom: 0;
-        width: 100%;
-    }
-    .grading-table thead {
-        background: linear-gradient(135deg, var(--blue-deep) 0%, #1A4A8A 100%);
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-    .grading-table th {
-        padding: 1.5rem;
-        font-weight: 700;
-        color: white;
-        border: none;
-        font-size: 0.95rem;
-        letter-spacing: 0.5px;
-        text-transform: uppercase;
-        text-align: left;
-    }
-    .grading-table th:nth-child(2),
-    .grading-table th:nth-child(3),
-    .grading-table th:nth-child(4) {
-        text-align: center;
-    }
-    .grading-table th small {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.85);
-        display: block;
-        margin-top: 0.4rem;
-        text-transform: none;
-        letter-spacing: 0;
-    }
-    .grading-table tbody tr {
-        border-bottom: 1px solid #EEF2F8;
-        transition: all 0.3s ease;
-    }
-    .grading-table tbody tr:nth-child(odd) {
-        background: #FAFBFC;
-    }
-    .grading-table tbody tr:last-child {
-        border-bottom: none;
-    }
-    .grading-table tbody tr:hover {
-        background: linear-gradient(90deg, #F0F7FF 0%, #FFFFFF 100%);
-        box-shadow: inset 4px 0 0 var(--blue-deep);
-    }
-    .grading-table td {
-        padding: 1.3rem 1.5rem;
-        vertical-align: middle;
-        border: none;
-        font-size: 0.95rem;
-    }
-    .grading-table td:nth-child(2),
-    .grading-table td:nth-child(3),
-    .grading-table td:nth-child(4) {
-        text-align: center;
-    }
-    .code-number {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        color: var(--blue-deep);
-        font-size: 0.95rem;
-        letter-spacing: 0.8px;
-        background: linear-gradient(135deg, #EEF2F8 0%, #E0EAFF 100%);
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        display: inline-block;
-    }
-    .grade-input {
-        width: 100%;
-        max-width: 140px;
-        padding: 0.8rem 1rem;
-        text-align: center;
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 600;
-        font-size: 1rem;
-        border: 2px solid #E5E7EB;
-        border-radius: 10px;
-        background: white;
-        transition: all 0.3s ease;
-        color: var(--ict-navy);
-        display: inline-block;
-    }
-    .grade-input::placeholder {
-        color: #D1D5DB;
-        font-weight: 500;
-    }
-    .grade-input:hover {
-        border-color: #D1D5DB;
-        background: #FAFBFC;
-    }
-    .grade-input:focus {
-        border-color: var(--blue-deep);
-        box-shadow: 0 0 0 4px rgba(13, 46, 94, 0.12);
-        outline: none;
-        background: #FFFFFF;
-    }
-    .final-display {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 700;
-        color: var(--ict-navy);
-        font-size: 1rem;
-        padding: 0.6rem 1rem;
-        background: #EEF2F8;
-        border-radius: 8px;
-        display: inline-block;
-        min-width: 80px;
-    }
-    .final-display[style*="color: rgb(22, 163, 74)"],
-    .final-display[style*="color: #16a34a"],
-    .final-display[style*="#166534"] {
-        background: #DCFCE7;
-        color: #166534 !important;
-    }
-    .final-display[style*="color: rgb(155, 34, 38)"],
-    .final-display[style*="color: #9B2226"],
-    .final-display[style*="#C1121F"] {
-        background: #FEE2E2;
-        color: #991B1B !important;
-    }
-    .letter-grade-display {
-        font-family: 'JetBrains Mono', monospace;
-        font-weight: 900;
-        font-size: 1.2rem;
-        padding: 0.6rem 1rem;
-        background: #EEF2F8;
-        border-radius: 8px;
-        display: inline-block;
-        min-width: 60px;
-        text-align: center;
-    }
-    .letter-grade-display[data-grade="A"] {
-        background: #DCFCE7;
-        color: #166534;
-    }
-    .letter-grade-display[data-grade="B+"],
-    .letter-grade-display[data-grade="B"] {
-        background: #D1E7DD;
-        color: #0F5132;
-    }
-    .letter-grade-display[data-grade="C+"],
-    .letter-grade-display[data-grade="C"] {
-        background: #FFF3CD;
-        color: #664D03;
-    }
-    .letter-grade-display[data-grade="D+"],
-    .letter-grade-display[data-grade="D"] {
-        background: #FFE5B4;
-        color: #8B5A00;
-    }
-    .letter-grade-display[data-grade="F"] {
-        background: #FEE2E2;
-        color: #991B1B;
-    }
-    .validation-error {
-        color: #DC2626;
-        font-size: 0.85rem;
-        margin-top: 0.3rem;
-        display: none;
-    }
-    .no-students {
-        text-align: center;
-        padding: 3rem 2rem;
-        color: #9CA3AF;
-    }
-    .no-students-icon {
-        font-size: 3rem;
-        opacity: 0.2;
-        margin-bottom: 1rem;
-    }
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        flex-wrap: wrap;
-        padding: 1.5rem 0;
-        animation: fadeInUp 0.6s ease-out 0.3s both;
-    }
-    .btn-save {
-        background: white;
-        color: var(--blue-deep);
-        border: 2px solid var(--blue-deep);
-        border-radius: 10px;
-        padding: 0.8rem 1.5rem;
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-        text-decoration: none;
-    }
-    .btn-save:hover {
-        background: var(--blue-deep);
-        color: white;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(13, 46, 94, 0.2);
-    }
-    .btn-submit {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 0.8rem 1.5rem;
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.6rem;
-    }
-    .btn-submit:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(5, 150, 105, 0.3);
-    }
-    .grading-hint {
-        color: #6B7280;
-        font-size: 0.9rem;
-        margin-top: 1rem;
-        padding-left: 1rem;
-        border-left: 3px solid var(--blue-deep);
-    }
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-</style>
-{% endblock %}
-
+{% block title %}{{ course.code }} — Grade Submission{% endblock %}
 {% block content %}
-<a href="{% url 'professor_dashboard' %}" class="back-link">
-    <i class="bi bi-arrow-left"></i>Back to My Courses
-</a>
 
-<div class="grade-page-header">
-    <div>
-        <div class="grade-page-title">{{ course.code }}</div>
-        <div class="grade-page-subtitle">{{ course.name }}</div>
-    </div>
-    <div class="course-meta">
-        <span class="meta-badge meta-badge-level-{{ course.level }}">{{ course.get_level_display }}</span>
-        <div class="meta-item">
-            <i class="bi bi-people"></i>
-            <span>{{ enrollments.count }} student{{ enrollments.count|pluralize }}</span>
-        </div>
-        {% if course.grades_submitted %}
-        <div class="status-submitted">
-            <i class="bi bi-check2-circle"></i>
-            <span>Grades Submitted</span>
-        </div>
-        {% endif %}
-    </div>
+<!-- MODAL POPUP FOR MESSAGES -->
+{% if messages %}
+<div id="messageModal" class="message-modal" style="display: flex;">
+  <div class="message-modal-content" style="
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: white; border-radius: 16px; padding: 2rem;
+    box-shadow: 0 20px 60px rgba(13, 46, 94, 0.3);
+    z-index: 9999; max-width: 600px; width: 90%;
+    animation: slideInUp 0.3s ease-out;
+  ">
+    <!-- Close Button -->
+    <button onclick="closeMessageModal()" style="
+      position: absolute; top: 1rem; right: 1rem;
+      background: none; border: none; font-size: 1.5rem;
+      cursor: pointer; color: #6B7280; transition: color 0.2s;
+    " onmouseover="this.style.color='#1A4A8A'" onmouseout="this.style.color='#6B7280'">
+      ✕
+    </button>
+
+    <!-- Messages -->
+    {% for message in messages %}
+      <div class="message-item" data-tags="{{ message.tags }}" style="
+        padding: 1.25rem; border-radius: 12px; margin-bottom: 1rem;
+        font-size: 0.95rem; border-left: 5px solid; white-space: pre-wrap;
+        font-family: 'DM Sans', sans-serif; line-height: 1.6;
+      ">
+        {{ message|safe }}
+      </div>
+    {% endfor %}
+
+    <!-- Close Button at Bottom -->
+    <button onclick="closeMessageModal()" style="
+      width: 100%; padding: 0.75rem 1.5rem;
+      background: #1A4A8A; color: white;
+      border: none; border-radius: 10px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      font-size: 0.9rem;
+    " onmouseover="this.style.background='#0D2E5E'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(26,74,138,0.3)'" onmouseout="this.style.background='#1A4A8A'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+      ✓ Got it
+    </button>
+  </div>
+
+  <!-- Semi-transparent Backdrop -->
+  <div class="message-modal-backdrop" onclick="closeMessageModal()" style="
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); z-index: 9998;
+  "></div>
 </div>
 
-{% if not course.grades_submitted %}
-<div class="alert-instructions">
-    <div class="alert-instructions-content">
-        <i class="bi bi-info-circle-fill"></i>
-        <div class="alert-instructions-text">
-            <strong>Grading Instructions</strong>
-            <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem;">Enter grades for each component. CC Score (0–20) for continuous assessment, Attendance (0–10) for participation, and SN Score (0–70) for semester exam. Save progress at any time, and submit when all grades are complete. Letter grades are automatically calculated.</p>
-            <div class="alert-instructions-formula">
-                <strong>Formula:</strong> Final Grade = CC (0–20) + Attendance (0–10) + SN (0–70) = 100 points<br>
-                <strong>Letter Grades:</strong> A: 80-100 | B+: 70-79 | B: 60-69 | C+: 55-59 | C: 50-54 | D+: 45-49 | D: 40-44 | F: 0-39
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<form method="post" id="gradeForm">
-    {% csrf_token %}
-    
-    {% if enrollments %}
-    <div class="grading-table-section">
-        <div class="table-header">Grade Entry</div>
-        <div class="grading-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Anonymous Code</th>
-                        <th>CC Score <small>(0–20)</small></th>
-                        <th>Attendance <small>(0–10)</small></th>
-                        <th>SN Score <small>(0–70)</small></th>
-                        <th>Final Grade</th>
-                        <th>Letter Grade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for enrollment in enrollments %}
-                    <tr id="row-{{ enrollment.id }}">
-                        <td><span class="code-number">{{ enrollment.anonymous_code }}</span></td>
-                        
-                        <!-- CC Score (0-20) -->
-                        <td>
-                            {% if course.grades_submitted %}
-                            <span class="final-display">{{ enrollment.grade.cc_score|default:"—" }}</span>
-                            {% else %}
-                            <div>
-                                <input type="number" name="cc_{{ enrollment.id }}"
-                                    value="{{ enrollment.grade.cc_score|default:'' }}"
-                                    class="form-control grade-input"
-                                    min="0" max="20" step="0.25"
-                                    placeholder="0–20"
-                                    oninput="validateCC(this, '{{ enrollment.id }}')">
-                                <div class="validation-error" id="cc_error_{{ enrollment.id }}">Max: 20</div>
-                            </div>
-                            {% endif %}
-                        </td>
-                        
-                        <!-- Attendance (0-10) -->
-                        <td>
-                            {% if course.grades_submitted %}
-                            <span class="final-display">{{ enrollment.grade.attendance_score|default:"—" }}</span>
-                            {% else %}
-                            <div>
-                                <input type="number" name="attendance_{{ enrollment.id }}"
-                                    value="{{ enrollment.grade.attendance_score|default:'' }}"
-                                    class="form-control grade-input"
-                                    min="0" max="10" step="0.25"
-                                    placeholder="0–10"
-                                    oninput="validateAttendance(this, '{{ enrollment.id }}')">
-                                <div class="validation-error" id="attendance_error_{{ enrollment.id }}">Max: 10</div>
-                            </div>
-                            {% endif %}
-                        </td>
-                        
-                        <!-- SN Score (0-70) -->
-                        <td>
-                            {% if course.grades_submitted %}
-                            <span class="final-display">{{ enrollment.grade.sn_score|default:"—" }}</span>
-                            {% else %}
-                            <div>
-                                <input type="number" name="sn_{{ enrollment.id }}"
-                                    value="{{ enrollment.grade.sn_score|default:'' }}"
-                                    class="form-control grade-input"
-                                    min="0" max="70" step="0.25"
-                                    placeholder="0–70"
-                                    oninput="validateSN(this, '{{ enrollment.id }}')">
-                                <div class="validation-error" id="sn_error_{{ enrollment.id }}">Max: 70</div>
-                            </div>
-                            {% endif %}
-                        </td>
-                        
-                        <!-- Final Grade Display -->
-                        <td>
-                            <span class="final-display" id="final-{{ enrollment.id }}">
-                                {% if enrollment.grade.final_score %}
-                                {{ enrollment.grade.final_score }}
-                                {% else %}—{% endif %}
-                            </span>
-                        </td>
-                        
-                        <!-- Letter Grade Display -->
-                        <td>
-                            <span class="letter-grade-display" id="letter-{{ enrollment.id }}" data-grade="">
-                                {% if enrollment.grade.letter_grade %}
-                                {{ enrollment.grade.letter_grade }}
-                                {% else %}—{% endif %}
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {% if not course.grades_submitted %}
-    <div class="action-buttons">
-        <button type="submit" name="save_draft" class="btn-save">
-            <i class="bi bi-floppy"></i>Save Progress
-        </button>
-        <button type="submit" name="submit_final" class="btn-submit"
-            onclick="return confirm('Are you sure you want to submit grades to the Registra? This action cannot be undone.')">
-            <i class="bi bi-send"></i>Submit to Registra
-        </button>
-        <div class="grading-hint">
-            💡 Tip: CC (0–20) + Attendance (0–10) + SN (0–70) = Final (0–100). Do not exceed maximum values.
-        </div>
-    </div>
-    {% endif %}
-
-    {% else %}
-    <div class="grading-table">
-        <div class="no-students">
-            <div class="no-students-icon">📚</div>
-            <p style="font-size: 1.1rem; font-weight: 600; color: var(--ict-navy); margin-bottom: 0.5rem;">No Students Enrolled</p>
-            <p>There are no students enrolled in this course yet.</p>
-        </div>
-    </div>
-    {% endif %}
-</form>
-{% endblock %}
-
-{% block extra_js %}
 <script>
-/**
- * Get letter grade based on final score
- * A: 80-100, B+: 70-79, B: 60-69, C+: 55-59, C: 50-54, D+: 45-49, D: 40-44, F: 0-39
- */
-function getLetterGrade(score) {
-    if (score === null || score === undefined || isNaN(score)) return null;
-    score = parseFloat(score);
-    if (score >= 80) return 'A';
-    if (score >= 70) return 'B+';
-    if (score >= 60) return 'B';
-    if (score >= 55) return 'C+';
-    if (score >= 50) return 'C';
-    if (score >= 45) return 'D+';
-    if (score >= 40) return 'D';
-    return 'F';
+function closeMessageModal() {
+  const modal = document.getElementById('messageModal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
 }
 
-/**
- * Get color for final score (green if >= 50, red otherwise)
- */
-function getScoreColor(score) {
-    const final = parseFloat(score);
-    return final >= 50 ? '#166534' : '#9B2226';
-}
+// Apply dynamic styles based on message tags
+document.querySelectorAll('.message-item').forEach(item => {
+  const tag = item.getAttribute('data-tags') || '';
+  if (tag === 'success') {
+    item.style.background = '#ECFDF5';
+    item.style.color = '#065F46';
+    item.style.borderLeftColor = '#10B981';
+  } else if (tag === 'warning') {
+    item.style.background = '#FFFBEB';
+    item.style.color = '#92400E';
+    item.style.borderLeftColor = '#F59E0B';
+  } else if (tag === 'error') {
+    item.style.background = '#FEF2F2';
+    item.style.color = '#991B1B';
+    item.style.borderLeftColor = '#DC2626';
+  } else {
+    item.style.background = '#EFF6FF';
+    item.style.color = '#1E40AF';
+    item.style.borderLeftColor = '#1A4A8A';
+  }
+});
 
-/**
- * Update final grade and letter grade when any input changes
- */
-function updateFinal(enrollmentId) {
-    const cc = parseFloat(document.querySelector(`[name="cc_${enrollmentId}"]`)?.value) || null;
-    const attendance = parseFloat(document.querySelector(`[name="attendance_${enrollmentId}"]`)?.value) || 0;
-    const sn = parseFloat(document.querySelector(`[name="sn_${enrollmentId}"]`)?.value) || null;
-    
-    const finalEl = document.getElementById(`final-${enrollmentId}`);
-    const letterEl = document.getElementById(`letter-${enrollmentId}`);
-    
-    // Calculate final only if CC and SN are provided (attendance defaults to 0)
-    if (cc !== null && sn !== null && !isNaN(cc) && !isNaN(sn)) {
-        const final = (cc + attendance + sn).toFixed(2);
-        finalEl.textContent = final;
-        finalEl.style.color = getScoreColor(final);
-        
-        // Calculate and display letter grade
-        const letterGrade = getLetterGrade(final);
-        letterEl.textContent = letterGrade || '—';
-        letterEl.setAttribute('data-grade', letterGrade || '');
-    } else {
-        finalEl.textContent = '—';
-        finalEl.style.color = '';
-        letterEl.textContent = '—';
-        letterEl.setAttribute('data-grade', '');
+// Auto-hide after 10 seconds if success
+const messageItems = document.querySelectorAll('.message-item');
+let hasError = false;
+messageItems.forEach(item => {
+  if (item.parentElement.classList.contains('error') || item.textContent.includes('❌')) {
+    hasError = true;
+  }
+});
+
+if (!hasError) {
+  setTimeout(() => {
+    const modal = document.getElementById('messageModal');
+    if (modal && modal.style.display !== 'none') {
+      modal.style.opacity = '1';
+      modal.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => {
+        modal.style.opacity = '0';
+        setTimeout(() => {
+          modal.style.display = 'none';
+        }, 300);
+      }, 8000); // Hide after 8 seconds
     }
+  }, 500);
 }
 
-/**
- * Validate CC score (max 20) and trigger calculation
- */
-function validateCC(input, enrollmentId) {
-    const errorEl = document.getElementById(`cc_error_${enrollmentId}`);
-    const value = parseFloat(input.value);
-    
-    if (input.value === '') {
-        // Empty is OK
-        input.style.borderColor = '';
-        errorEl.style.display = 'none';
-    } else if (value > 20) {
-        // Over max - reject
-        input.style.borderColor = '#DC2626';
-        errorEl.style.display = 'block';
-        input.value = '';
-    } else if (value < 0) {
-        // Negative - reject
-        input.style.borderColor = '#DC2626';
-        errorEl.style.display = 'block';
-        input.value = '';
-    } else {
-        // Valid value
-        input.style.borderColor = '';
-        errorEl.style.display = 'none';
-    }
-    
-    // Always update final grade after validation
-    updateFinal(enrollmentId);
-}
-
-/**
- * Validate Attendance score (max 10) and trigger calculation
- */
-function validateAttendance(input, enrollmentId) {
-    const errorEl = document.getElementById(`attendance_error_${enrollmentId}`);
-    const value = parseFloat(input.value);
-    
-    if (input.value === '') {
-        // Empty is OK
-        input.style.borderColor = '';
-        errorEl.style.display = 'none';
-    } else if (value > 10) {
-        // Over max - reject
-        input.style.borderColor = '#DC2626';
-        errorEl.style.display = 'block';
-        input.value = '';
-    } else if (value < 0) {
-        // Negative - reject
-        input.style.borderColor = '#DC2626';
-        errorEl.style.display = 'block';
-        input.value = '';
-    } else {
-        // Valid value
-        input.style.borderColor = '';
-        errorEl.style.display = 'none';
-    }
-    
-    // Always update final grade after validation
-    updateFinal(enrollmentId);
-}
-
-/**
- * Validate SN score (max 70) and trigger calculation
- */
-function validateSN(input, enrollmentId) {
-    const errorEl = document.getElementById(`sn_error_${enrollmentId}`);
-    const value = parseFloat(input.value);
-    
-    if (input.value === '') {
-        // Empty is OK
-        input.style.borderColor = '';
-        errorEl.style.display = 'none';
-    } else if (value > 70) {
-        // Over max - reject
-        input.style.borderColor = '#DC2626';
-        errorEl.style.display = 'block';
-        input.value = '';
-    } else if (value < 0) {
-        // Negative - reject
-        input.style.borderColor = '#DC2626';
-        errorEl.style.display = 'block';
-        input.value = '';
-    } else {
-        // Valid value
-        input.style.borderColor = '';
-        errorEl.style.display = 'none';
-    }
-    
-    // Always update final grade after validation
-    updateFinal(enrollmentId);
-}
-
-// Initialize all grades on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Get all enrollment IDs from the table rows
-    document.querySelectorAll('tr[id^="row-"]').forEach(row => {
-        const enrollmentId = row.id.replace('row-', '');
-        // Calculate initial grades if values are already present
-        updateFinal(enrollmentId);
+// Add copy button to each message
+document.querySelectorAll('.message-item').forEach((msgItem, index) => {
+  const msgText = msgItem.textContent;
+  const cleanText = msgText.replace(/[^\w\s\@\-\.\/\(\)\n]/g, ' ').replace(/\s+/g, ' ').trim();
+  
+  const copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.textContent = '📋 Copy Message';
+  copyBtn.style.display = 'block';
+  copyBtn.style.marginTop = '0.75rem';
+  copyBtn.style.padding = '0.5rem 1rem';
+  copyBtn.style.background = '#DC2626';
+  copyBtn.style.color = 'white';
+  copyBtn.style.border = 'none';
+  copyBtn.style.borderRadius = '6px';
+  copyBtn.style.fontSize = '0.9rem';
+  copyBtn.style.fontWeight = '600';
+  copyBtn.style.cursor = 'pointer';
+  copyBtn.style.transition = 'background 0.2s';
+  
+  copyBtn.addEventListener('mouseover', function() {
+    this.style.background = '#B91C1C';
+  });
+  copyBtn.addEventListener('mouseout', function() {
+    this.style.background = '#DC2626';
+  });
+  
+  copyBtn.addEventListener('click', function() {
+    navigator.clipboard.writeText(cleanText).then(() => {
+      this.textContent = '✅ Copied!';
+      this.style.background = '#059669';
+      setTimeout(() => {
+        this.textContent = '📋 Copy Message';
+        this.style.background = '#DC2626';
+      }, 2000);
+    }).catch(() => {
+      alert('Failed to copy to clipboard');
     });
+  });
+  
+  msgItem.appendChild(copyBtn);
 });
 </script>
+
+<style>
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
+.message-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9998;
+}
+</style>
+{% endif %}
+
+<style>
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; font-weight: 600; color: #6B7280;
+  text-decoration: none; margin-bottom: 1.25rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: #1A4A8A; }
+
+.course-header-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 16px rgba(13,46,94,0.06);
+  padding: 1.5rem; margin-bottom: 1.5rem;
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 1rem;
+  animation: fadeInUp 0.4s ease both;
+  position: relative; overflow: hidden;
+}
+.course-header-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #D4500A, #FF7A35);
+}
+.course-header-left { display: flex; flex-direction: column; gap: 0.4rem; }
+.course-header-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; font-weight: 600; color: #1A4A8A;
+}
+.course-header-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem; font-weight: 700; color: #0F1C2E;
+}
+.course-header-meta {
+  display: flex; align-items: center; gap: 0.75rem;
+  flex-wrap: wrap; margin-top: 0.25rem;
+}
+.course-header-meta span {
+  font-size: 0.78rem; color: #6B7280;
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.course-header-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 0.5rem;
+}
+
+.badge {
+  display: inline-flex; align-items: center;
+  padding: 0.22rem 0.65rem; border-radius: 999px;
+  font-size: 0.65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
+}
+.badge-submitted { background: #ECFDF5; color: #065F46; }
+.badge-pending { background: #FFFBEB; color: #92400E; }
+
+.tabs {
+  display: flex; gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #EEF2F8;
+  animation: fadeInUp 0.4s ease 0.1s both;
+}
+.tab-btn {
+  padding: 0.75rem 1.25rem;
+  border: none; background: transparent; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600;
+  color: #6B7280; transition: all 0.2s;
+  position: relative;
+}
+.tab-btn:hover { color: #1A4A8A; }
+.tab-btn.active {
+  color: #1A4A8A;
+  border-bottom: 3px solid #1A4A8A;
+  margin-bottom: -2px;
+}
+
+.info-alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.25rem; font-size: 0.85rem; font-weight: 500;
+  background: #EFF6FF; color: #1E40AF;
+  border-left: 4px solid #1A4A8A;
+  animation: fadeInUp 0.4s ease 0.15s both;
+}
+
+.warning-alert {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.25rem; font-size: 0.85rem; font-weight: 500;
+  background: #FFFBEB; color: #92400E;
+  border-left: 4px solid #F59E0B;
+}
+
+.submitted-banner {
+  padding: 1rem 1.25rem; border-radius: 12px;
+  margin-bottom: 1.25rem; font-size: 0.9rem; font-weight: 600;
+  background: #ECFDF5; color: #065F46;
+  border: 1px solid #A7F3D0;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+
+.table-card {
+  background: white; border-radius: 20px;
+  border: 1px solid #EEF2F8;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease 0.2s both;
+}
+
+.data-table {
+  width: 100%; border-collapse: collapse;
+}
+.data-table th {
+  padding: 0.75rem 1.25rem; text-align: left;
+  font-size: 0.68rem; font-weight: 700; color: #6B7280;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: #F8FAFF; border-bottom: 1px solid #EEF2F8;
+}
+.data-table td {
+  padding: 0.875rem 1.25rem; font-size: 0.82rem;
+  color: #0F1C2E; border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #FAFBFF; transition: background 0.15s; }
+
+.code-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem; font-weight: 600;
+  color: #1A4A8A; background: #EEF4FF;
+  padding: 0.3rem 0.6rem; border-radius: 8px;
+  border: 1px solid rgba(26,74,138,0.15);
+  display: inline-block;
+}
+
+.score-input {
+  padding: 0.6rem 0.8rem;
+  border: 1.5px solid #EEF2F8;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #0F1C2E;
+  width: 100%;
+  max-width: 100px;
+  transition: all 0.2s;
+}
+.score-input:focus {
+  border-color: #1A4A8A;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(26,74,138,0.08);
+  outline: none;
+}
+.score-input.saving {
+  border-color: #F59E0B;
+  background: #FFFBEB;
+}
+.score-input.saved {
+  border-color: #10B981;
+  background: #ECFDF5;
+}
+
+.save-indicator {
+  font-size: 0.7rem; font-weight: 600;
+  padding: 0.2rem 0.4rem; border-radius: 4px;
+  display: inline-block; margin-left: 0.3rem;
+  white-space: nowrap;
+}
+.save-indicator.saving {
+  color: #F59E0B;
+}
+.save-indicator.saved {
+  color: #10B981;
+}
+.save-indicator.error {
+  color: #DC2626;
+}
+
+.score-readonly {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #0F1C2E;
+  padding: 0.6rem 0.8rem;
+}
+
+.button-group {
+  display: flex; gap: 0.75rem; margin-top: 1.5rem; animation: fadeInUp 0.4s ease 0.3s both;
+}
+
+.btn {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.65rem 1.25rem; border-radius: 10px;
+  font-size: 0.78rem; font-weight: 600; border: none;
+  cursor: pointer; transition: all 0.2s;
+  text-decoration: none; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-primary { background: #1A4A8A; color: white; }
+.btn-primary:hover { background: #2563B0; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,74,138,0.25); }
+.btn-orange { background: #D4500A; color: white; }
+.btn-orange:hover { background: #FF7A35; transform: translateY(-1px); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<!-- BACK LINK -->
+<a href="{% url 'professor_dashboard' %}" class="back-link">← Back to Dashboard</a>
+
+<!-- COURSE HEADER CARD -->
+<div class="course-header-card">
+  <div class="course-header-left">
+    <div class="course-header-code">{{ course.code }}</div>
+    <div class="course-header-name">{{ course.name }}</div>
+    <div class="course-header-meta">
+      <span>📅 {{ course.semester.name }}</span>
+      <span>👥 {{ enrollments.count }} student{{ enrollments.count|pluralize }}</span>
+    </div>
+  </div>
+  <div class="course-header-right">
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
+      {% if course.cc_submitted %}
+        <span class="badge badge-submitted">✓ CA Submitted</span>
+      {% else %}
+        <span class="badge badge-pending">CA Pending</span>
+      {% endif %}
+      {% if course.sn_submitted %}
+        <span class="badge badge-submitted">✓ Final Submitted</span>
+      {% else %}
+        <span class="badge badge-pending">Final Pending</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button type="button" class="tab-btn {% if active_tab == 'cc' %}active{% endif %}" onclick="switchTab('cc')">
+    📝 CA Scores (0-30)
+  </button>
+  <button type="button" class="tab-btn {% if active_tab == 'sn' %}active{% endif %}" onclick="switchTab('sn')">
+    📊 Final Scores (0-70)
+  </button>
+</div>
+
+<!-- CA TAB -->
+<div id="cc-tab" class="tab-content {% if active_tab == 'cc' %}active{% endif %}">
+  <div class="info-alert">
+    📌 <strong>CA Scores</strong> — Enter scores out of 30. You can see full student identities here.
+  </div>
+
+  <!-- IMPORT CA MARKS SECTION -->
+  {% if not course.cc_submitted %}
+  <div style="background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%); border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 5px solid var(--blue-deep);">
+    <h3 style="font-size: 1rem; font-weight: 700; color: var(--ict-navy); margin-bottom: 0.75rem;">📤 Import CA Marks from Excel</h3>
+    <p style="color: #6B7280; font-size: 0.85rem; margin-bottom: 1rem;">Upload your filled CA template Excel file. Marks will be auto-populated.</p>
+    
+    <form method="post" action="/professor/courses/{{ course.id }}/import-ca-marks/" enctype="multipart/form-data" style="display: flex; gap: 0.5rem; align-items: center;">
+      {% csrf_token %}
+      <input type="file" name="ca_file" accept=".xlsx,.xls" style="padding: 0.5rem 0.8rem; border: 1px solid #ccc; border-radius: 8px; font-size: 0.8rem; max-width: 200px;">
+      <button type="submit" style="display: inline-flex; align-items: center; gap: 0.3rem; background: #10B981; color: white; padding: 0.65rem 1.25rem; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; white-space: nowrap;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)';" onmouseout="this.style.background='#10B981'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        📤 Import Marks
+      </button>
+    </form>
+  </div>
+  {% endif %}
+  
+  {% if course.cc_submitted %}
+    <div class="submitted-banner">✅ CA scores already submitted</div>
+    <div class="table-card">
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Matricule</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>CA Score /30</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for enrollment in enrollments %}
+            <tr>
+              <td><span class="code-cell">{{ enrollment.student.matricule }}</span></td>
+              <td>{{ enrollment.student.full_name }}</td>
+              <td style="font-size:0.8rem; color:#6B7280;">{{ enrollment.student.email|default:"—" }}</td>
+              <td><span class="score-readonly">{{ enrollment.grade.cc_score|default:"—" }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% else %}
+    <form method="post" action="{% url 'submit_cc_scores' course.id %}">
+      {% csrf_token %}
+    
+    <div class="table-card">
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Matricule</th>
+              <th>Full Name</th>
+              <th>Email</th>
+              <th>CA Score /30</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for enrollment in enrollments %}
+            <tr>
+              <td><span class="code-cell">{{ enrollment.student.matricule }}</span></td>
+              <td>{{ enrollment.student.full_name }}</td>
+              <td style="font-size:0.8rem; color:#6B7280;">{{ enrollment.student.email|default:"—" }}</td>
+              <td>
+                {% if enrollment.grade.cc_submitted %}
+                  <span class="score-readonly">{{ enrollment.grade.cc_score|default:"—" }}</span>
+                {% else %}
+                  <input 
+                    type="number" 
+                    class="score-input"
+                    name="cc_{{ enrollment.id }}"
+                    value="{{ enrollment.grade.cc_score|default:'' }}"
+                    min="0"
+                    max="30"
+                    step="0.25"
+                    placeholder="0"
+                  >
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <button type="submit" class="btn btn-primary">✅ Submit CA Scores</button>
+    </div>
+  </form>
+  {% endif %}
+</div>
+
+<!-- Final TAB -->
+<div id="sn-tab" class="tab-content {% if active_tab == 'sn' %}active{% endif %}">
+  {% if not course.is_coded %}
+    <div class="warning-alert">
+      ⚠️ <strong>Course Not Coded Yet</strong> — This course has not been coded by the registra. Final scores require coding first. Please wait for the registra to complete coding.
+    </div>
+  {% else %}
+    <div class="info-alert">
+      🔐 <strong>Final Scores</strong> — Enter scores out of 70. You only see anonymous codes, no student names. This is the exam score.
+    </div>
+    
+    <!-- Download Button -->
+    <div style="margin-bottom: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+      <a href="{% url 'download_coded_list' course.id %}" style="display: inline-flex; align-items: center; gap: 0.3rem; background: #7C3AED; color: white; padding: 0.65rem 1.25rem; border-radius: 10px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.85rem;" onmouseover="this.style.background='#6D28D9'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(124,58,237,0.3)';" onmouseout="this.style.background='#7C3AED'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        📥 Download Coded List
+      </a>
+      
+      <form method="post" action="/professor/courses/{{ course.id }}/import-sn-marks/" enctype="multipart/form-data" style="display: flex; gap: 0.5rem; align-items: center;">
+        {% csrf_token %}
+        <input type="file" name="sn_file" accept=".xlsx,.xls" style="padding: 0.5rem 0.8rem; border: 1px solid #ccc; border-radius: 8px; font-size: 0.8rem; max-width: 200px;">
+        <button type="submit" style="display: inline-flex; align-items: center; gap: 0.3rem; background: #10B981; color: white; padding: 0.65rem 1.25rem; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; white-space: nowrap;" onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(16,185,129,0.3)';" onmouseout="this.style.background='#10B981'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+          📤 Import Scores
+        </button>
+      </form>
+    </div>
+    
+    {% if course.sn_submitted %}
+      <div class="submitted-banner">✅ Final scores already submitted</div>
+      <div class="table-card">
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Anonymous Code</th>
+                <th>Final Score /70</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for enrollment in enrollments|dictsort:"anonymous_code" %}
+              <tr>
+                <td><span class="code-cell">{{ enrollment.anonymous_code }}</span></td>
+                <td><span class="score-readonly">{{ enrollment.grade.sn_score|default:"—" }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+    
+    <form method="post" action="{% url 'submit_sn_scores' course.id %}">
+      {% csrf_token %}
+      
+      <div class="table-card">
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Anonymous Code</th>
+                <th>Final Score /70</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for enrollment in enrollments|dictsort:"anonymous_code" %}
+              <tr>
+                <td><span class="code-cell">{{ enrollment.anonymous_code }}</span></td>
+                <td>
+                  {% if enrollment.grade.sn_submitted %}
+                    <span class="score-readonly">{{ enrollment.grade.sn_score|default:"—" }}</span>
+                  {% else %}
+                    <input 
+                      type="number" 
+                      class="score-input"
+                      name="sn_{{ enrollment.id }}"
+                      value="{{ enrollment.grade.sn_score|default:'' }}"
+                      min="0"
+                      max="70"
+                      step="0.25"
+                      placeholder="0"
+                    >
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="button-group">
+        <button type="submit" class="btn btn-orange">✅ Submit Final Scores</button>
+      </div>
+    </form>
+    {% endif %}
+  {% endif %}
+</div>
+
+<script>
+// ========== AUTO-SAVE FUNCTIONALITY ==========
+
+// Track pending saves to avoid duplicate requests
+const pendingSaves = new Map(); // Key: "cc_123" or "sn_456"
+
+// Debounce function to delay auto-save
+function debounce(func, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
+
+// Auto-save function called with debounce
+async function performAutoSave(input) {
+  const inputName = input.name; // cc_123 or sn_456
+  const courseId = parseInt("{{ course.id }}", 10);
+  const scoreValue = parseFloat(input.value);
+  
+  // Parse out score type (cc or sn) and enrollment ID
+  const match = inputName.match(/^(cc|sn)_(\d+)$/);
+  if (!match) return;
+  
+  const scoreType = match[1]; // "cc" or "sn"
+  const enrollmentId = parseInt(match[2]);
+  
+  // Validate score is within range
+  const maxScore = scoreType === 'cc' ? 30 : 70;
+  if (scoreValue !== '' && (scoreValue < 0 || scoreValue > maxScore)) {
+    setInputError(input, `Score must be between 0 and ${maxScore}`);
+    return;
+  }
+  
+  // Allow empty scores (student didn't enter yet)
+  if (scoreValue === '') return;
+  
+  // Prevent duplicate saves in flight
+  const cacheKey = `${scoreType}_${enrollmentId}`;
+  if (pendingSaves.has(cacheKey)) return;
+  
+  // Set input to "saving" state
+  setInputSaving(input);
+  pendingSaves.set(cacheKey, true);
+  
+  try {
+    // Determine which endpoint to call
+    const endpoint = scoreType === 'cc' 
+      ? `/professor/courses/${courseId}/auto-save-cc/`
+      : `/professor/courses/${courseId}/auto-save-sn/`;
+    
+    const payload = scoreType === 'cc'
+      ? { enrollment_id: enrollmentId, cc_score: scoreValue }
+      : { enrollment_id: enrollmentId, sn_score: scoreValue };
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      setInputSaved(input);
+    } else {
+      setInputError(input, data.error || 'Save failed');
+    }
+  } catch (error) {
+    console.error('Auto-save error:', error);
+    setInputError(input, 'Network error');
+  } finally {
+    pendingSaves.delete(cacheKey);
+  }
+}
+
+// Update input UI: show "Saving..." state
+function setInputSaving(input) {
+  input.classList.add('saving');
+  input.classList.remove('saved', 'error');
+  const indicator = input.nextElementSibling;
+  if (indicator && indicator.classList.contains('save-indicator')) {
+    indicator.textContent = 'Saving...';
+    indicator.className = 'save-indicator saving';
+  }
+}
+
+// Update input UI: show "Saved" state
+function setInputSaved(input) {
+  input.classList.add('saved');
+  input.classList.remove('saving', 'error');
+  const indicator = input.nextElementSibling;
+  if (indicator && indicator.classList.contains('save-indicator')) {
+    indicator.textContent = '✓';
+    indicator.className = 'save-indicator saved';
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      if (indicator.classList.contains('saved')) {
+        indicator.textContent = '';
+      }
+    }, 3000);
+  }
+}
+
+// Update input UI: show error state
+function setInputError(input, message) {
+  input.classList.add('error');
+  input.classList.remove('saving', 'saved');
+  const indicator = input.nextElementSibling;
+  if (indicator && indicator.classList.contains('save-indicator')) {
+    indicator.textContent = '✗';
+    indicator.className = 'save-indicator error';
+    console.warn('Auto-save error:', message);
+  }
+}
+
+// Attach auto-save to all score inputs
+document.addEventListener('DOMContentLoaded', function() {
+  // Create debounced save function (500ms delay)
+  const debouncedSave = debounce(performAutoSave, 500);
+  
+  // Find all score input fields
+  const scoreInputs = document.querySelectorAll('.score-input');
+  
+  scoreInputs.forEach(input => {
+    // Create and insert save indicator after input
+    const indicator = document.createElement('span');
+    indicator.className = 'save-indicator';
+    indicator.style.marginLeft = '0.5rem';
+    input.parentNode.insertBefore(indicator, input.nextSibling);
+    
+    // Add change event listener
+    input.addEventListener('change', function() {
+      debouncedSave(this);
+    });
+    
+    // Optional: also save on blur if user tabs away
+    input.addEventListener('blur', function() {
+      if (this.value !== '') {
+        debouncedSave(this);
+      }
+    });
+  });
+});
+
+// ========== TAB SWITCHING ==========
+
+function switchTab(tabName) {
+  // Hide all tabs
+  document.getElementById('cc-tab').classList.remove('active');
+  document.getElementById('sn-tab').classList.remove('active');
+  
+  // Remove active from all buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  
+  // Show selected tab
+  document.getElementById(tabName + '-tab').classList.add('active');
+  
+  // Mark button as active
+  event.target.classList.add('active');
+  
+  // Update URL
+  window.history.pushState(null, '', '?tab=' + tabName);
+}
+</script>
+
 {% endblock %}

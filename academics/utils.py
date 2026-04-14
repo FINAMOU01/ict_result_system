@@ -272,3 +272,100 @@ def import_enrollment_file(file_obj, semester_id, user):
         user,
         preview['file_name'],
     )
+
+
+# ============ STATISTICS & REPORTING ============
+
+def get_grade(score):
+    """Returns (grade_letter, gpa, is_pass) for a given score out of 100."""
+    if score is None:
+        return None, None, None
+    score = float(score)
+    if score >= 80:   return 'A',  4.0, True
+    if score >= 70:   return 'B+', 3.5, True
+    if score >= 60:   return 'B',  3.0, True
+    if score >= 55:   return 'C+', 2.5, True
+    if score >= 50:   return 'C',  2.0, True
+    if score >= 45:   return 'D+', 1.5, False
+    if score >= 40:   return 'D',  1.0, False
+    return 'F', 0.0, False
+
+
+def get_course_statistics(course):
+    """
+    Returns a dict of statistics for a single course.
+    Only counts enrollments where final_score is not None.
+    """
+    enrollments = course.enrollments.select_related('grade')
+
+    total = enrollments.count()
+    graded = [e for e in enrollments if hasattr(e, 'grade') and e.grade.final_score is not None]
+    graded_count = len(graded)
+
+    grade_counts = {'A': 0, 'B+': 0, 'B': 0, 'C+': 0, 'C': 0, 'D+': 0, 'D': 0, 'F': 0}
+    pass_count = 0
+    fail_count = 0
+    total_gpa = 0
+
+    for enrollment in graded:
+        score = float(enrollment.grade.final_score)
+        letter, gpa, is_pass = get_grade(score)
+        grade_counts[letter] += 1
+        total_gpa += gpa
+        if is_pass:
+            pass_count += 1
+        else:
+            fail_count += 1
+
+    def pct(n):
+        return round((n / graded_count * 100), 1) if graded_count > 0 else 0
+
+    return {
+        'course': course,
+        'total_enrolled': total,
+        'total_graded': graded_count,
+        'pass_count': pass_count,
+        'fail_count': fail_count,
+        'pass_pct': pct(pass_count),
+        'fail_pct': pct(fail_count),
+        'average_gpa': round(total_gpa / graded_count, 2) if graded_count > 0 else 0,
+        'grade_counts': grade_counts,
+        'grade_pcts': {g: pct(c) for g, c in grade_counts.items()},
+    }
+
+
+def get_semester_statistics(semester):
+    """
+    Returns aggregated statistics for all decoded courses in a semester.
+    """
+    courses = semester.courses.filter(is_decoded=True)
+    course_stats = [get_course_statistics(c) for c in courses]
+
+    total_graded = sum(s['total_graded'] for s in course_stats)
+    pass_count   = sum(s['pass_count']   for s in course_stats)
+    fail_count   = sum(s['fail_count']   for s in course_stats)
+    grade_counts = {'A': 0, 'B+': 0, 'B': 0, 'C+': 0, 'C': 0, 'D+': 0, 'D': 0, 'F': 0}
+    for s in course_stats:
+        for g in grade_counts:
+            grade_counts[g] += s['grade_counts'][g]
+
+    def pct(n):
+        return round((n / total_graded * 100), 1) if total_graded > 0 else 0
+
+    best_course  = max(course_stats, key=lambda s: s['pass_pct'],  default=None)
+    worst_course = min(course_stats, key=lambda s: s['pass_pct'],  default=None)
+
+    return {
+        'semester': semester,
+        'total_courses': len(course_stats),
+        'total_graded': total_graded,
+        'pass_count': pass_count,
+        'fail_count': fail_count,
+        'pass_pct': pct(pass_count),
+        'fail_pct': pct(fail_count),
+        'grade_counts': grade_counts,
+        'grade_pcts': {g: pct(c) for g, c in grade_counts.items()},
+        'best_course': best_course,
+        'worst_course': worst_course,
+        'course_stats': course_stats,
+    }
