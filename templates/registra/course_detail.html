@@ -616,7 +616,7 @@ function searchAdmittedStudents() {
           <div class="modal-student-info">
             <div class="modal-student-matricule">${student.matricule}</div>
             <div class="modal-student-name">${student.first_name} ${student.last_name}</div>
-            <div class="modal-student-level">${student.level} • ${student.admitted_year}</div>
+            <div class="modal-student-level">${student.level} &bull; ${student.admitted_year}</div>
           </div>
           <button type="button" class="modal-add-btn" onclick="addStudentFromAdmissions('${student.matricule}')" ${student.already_enrolled ? 'disabled' : ''}>${student.already_enrolled ? 'Already Enrolled' : 'Add'}</button>
         </div>

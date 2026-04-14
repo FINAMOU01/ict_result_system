@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: ict_results_web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - staticfiles_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - ALLOWED_HOSTS=localhost,127.0.0.1,web
+      - SECRET_KEY=django-insecure-docker-dev-key
+      - DATABASE_URL=sqlite:////app/db.sqlite3
+    stdin_open: true
+    tty: true
+
+volumes:
+  staticfiles_volume:
+  media_volume:
