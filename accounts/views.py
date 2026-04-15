@@ -36,7 +36,8 @@ def login_view(request):
         )
         
         # Redirect based on user role immediately
-        if user.role == 'admin':
+        # Check is_superuser first (for superuser created via createsuperuser command)
+        if user.is_superuser or user.role == 'admin':
             return redirect('admin_dashboard')
         elif user.role == 'registra':
             return redirect('registra_dashboard')
@@ -56,7 +57,8 @@ def logout_view(request):
 @login_required
 def dashboard_redirect(request):
     user = request.user
-    if user.role == 'admin':
+    # Check is_superuser first (for superuser created via createsuperuser command)
+    if user.is_superuser or user.role == 'admin':
         return redirect('admin_dashboard')
     elif user.role == 'registra':
         return redirect('registra_dashboard')

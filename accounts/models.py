@@ -23,6 +23,12 @@ class CustomUser(AbstractUser):
     def is_professor(self):
         return self.role == 'professor'
 
+    def save(self, *args, **kwargs):
+        # Automatically set role to 'admin' if user is superuser
+        if self.is_superuser and self.role != 'admin':
+            self.role = 'admin'
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.get_full_name()} ({self.get_role_display()})"
 
