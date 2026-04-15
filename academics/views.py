@@ -17,7 +17,8 @@ def role_required(roles):
         def wrapper(request, *args, **kwargs):
             if not request.user.is_authenticated:
                 return redirect('login')
-            if request.user.role not in roles:
+            # Allow superusers or users with matching role
+            if not (request.user.is_superuser or request.user.role in roles):
                 messages.error(request, "Access denied.")
                 return redirect('dashboard')
             return view_func(request, *args, **kwargs)
